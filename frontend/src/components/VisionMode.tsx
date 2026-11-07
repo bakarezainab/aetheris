@@ -59,16 +59,16 @@ const GLASS = {
   bgDeep: 'rgba(5, 8, 18, 0.92)',
   border: 'rgba(255, 255, 255, 0.05)',
   borderAccent: 'rgba(255, 255, 255, 0.10)',
-  borderGlow: 'rgba(0, 170, 255, 0.15)',
+  borderGlow: 'rgba(168, 85, 247, 0.15)',
   cardBg: 'rgba(255, 255, 255, 0.02)',
-  cardBgAccent: 'rgba(0, 170, 255, 0.04)',
+  cardBgAccent: 'rgba(168, 85, 247, 0.04)',
   text: '#e1e1f0',
   textMuted: 'rgba(190, 199, 211, 0.7)',
   textDim: 'rgba(190, 199, 211, 0.4)',
-  accent: '#93ccff',
-  accentBright: '#00AAFF',
-  secondary: '#6cffbf',
-  secondaryDim: 'rgba(108, 255, 191, 0.15)',
+  accent: '#d8b4fe',
+  accentBright: '#A855F7',
+  secondary: '#f472b6',
+  secondaryDim: 'rgba(244, 114, 182, 0.15)',
 };
 
 export default function VisionMode() {
@@ -473,21 +473,21 @@ export default function VisionMode() {
             >
               {/* Scanning line preview */}
               <motion.div className="absolute left-0 right-0 h-[2px]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(147,204,255,0.4), transparent)' }}
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(216,180,254,0.4), transparent)' }}
                 animate={{ top: ['0%', '100%'] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
               />
-              <Eye className="w-8 h-8 mb-3" style={{ color: 'rgba(147,204,255,0.35)' }} />
-              <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(147,204,255,0.4)' }}>Click to open camera</span>
-              <span className="text-[9px] mt-1.5" style={{ color: 'rgba(147,204,255,0.2)' }}>AI will see you and start a conversation</span>
+              <Eye className="w-8 h-8 mb-3" style={{ color: 'rgba(216,180,254,0.35)' }} />
+              <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(216,180,254,0.4)' }}>Click to open camera</span>
+              <span className="text-[9px] mt-1.5" style={{ color: 'rgba(216,180,254,0.2)' }}>AI will see you and start a conversation</span>
             </motion.div>
 
             <div className="text-center mt-7 mb-6">
               <h2 className="text-3xl font-bold" style={{ color: GLASS.accent }}>Vision AI Assistant</h2>
               <p className="text-sm mt-2 font-medium" style={{ color: GLASS.textMuted }}>I can see you, hear you, and help you</p>
               <div className="flex items-center justify-center gap-3 mt-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold" style={{ background: 'rgba(147,204,255,0.05)', border: '1px solid rgba(147,204,255,0.1)', color: 'rgba(147,204,255,0.5)' }}><Eye className="w-2.5 h-2.5" />Visual Awareness</span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold" style={{ background: 'rgba(108,255,191,0.05)', border: '1px solid rgba(108,255,191,0.1)', color: 'rgba(108,255,191,0.5)' }}><Mic className="w-2.5 h-2.5" />Voice Chat</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold" style={{ background: 'rgba(216,180,254,0.05)', border: '1px solid rgba(216,180,254,0.1)', color: 'rgba(216,180,254,0.5)' }}><Eye className="w-2.5 h-2.5" />Visual Awareness</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold" style={{ background: 'rgba(244,114,182,0.05)', border: '1px solid rgba(244,114,182,0.1)', color: 'rgba(244,114,182,0.5)' }}><Mic className="w-2.5 h-2.5" />Voice Chat</span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold" style={{ background: 'rgba(224,182,255,0.05)', border: '1px solid rgba(224,182,255,0.1)', color: 'rgba(224,182,255,0.5)' }}><Sparkles className="w-2.5 h-2.5" />Smart Intent</span>
               </div>
             </div>
@@ -507,7 +507,7 @@ export default function VisionMode() {
 
             <motion.button onClick={toggleCamera} disabled={isStarting} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               className="mt-6 pointer-events-auto flex items-center gap-3 px-7 py-3.5 rounded-full cursor-pointer disabled:opacity-80"
-              style={{ background: isStarting ? GLASS.bg : 'linear-gradient(135deg,#00AAFF,#0088CC)', border: isStarting ? `1px solid ${GLASS.border}` : 'none', boxShadow: isStarting ? 'none' : '0 8px 25px rgba(0,170,255,0.35)' }}
+              style={{ background: isStarting ? GLASS.bg : 'linear-gradient(135deg,#A855F7,#7E22CE)', border: isStarting ? `1px solid ${GLASS.border}` : 'none', boxShadow: isStarting ? 'none' : '0 8px 25px rgba(168,85,247,0.35)' }}
             >
               {isStarting ? <><Loader2 className="w-4 h-4 animate-spin" style={{ color: GLASS.accent }} /><span className="text-sm font-bold uppercase" style={{ color: GLASS.accent }}>Initializing...</span></>
                 : <><Camera className="w-4 h-4 text-white" /><span className="text-sm font-bold text-white uppercase">Open Camera</span></>}
@@ -551,7 +551,7 @@ export default function VisionMode() {
               {/* Scan Line Effect — animated sweep */}
               {(phase === 'analyzing' || featureBusy) && (
                 <motion.div className="absolute left-0 right-0 h-[2px] z-20 pointer-events-none"
-                  style={{ background: 'linear-gradient(90deg, transparent, #93ccff, transparent)', boxShadow: '0 0 12px rgba(147,204,255,0.5)' }}
+                  style={{ background: 'linear-gradient(90deg, transparent, #d8b4fe, transparent)', boxShadow: '0 0 12px rgba(216,180,254,0.5)' }}
                   animate={{ top: ['0%', '100%'] }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 />
@@ -560,7 +560,7 @@ export default function VisionMode() {
               {/* Ambient scan line — always running (subtle) */}
               {!(phase === 'analyzing' || featureBusy) && (
                 <motion.div className="absolute left-0 right-0 h-[2px] z-10 pointer-events-none"
-                  style={{ background: 'linear-gradient(90deg, transparent, rgba(147,204,255,0.15), transparent)' }}
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(216,180,254,0.15), transparent)' }}
                   animate={{ top: ['0%', '100%'], opacity: [0, 0.5, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 />
@@ -617,7 +617,7 @@ export default function VisionMode() {
                 <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                   onClick={() => runAnalysis()} disabled={phase !== 'idle'}
                   className="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-30"
-                  style={{ background: GLASS.bg, border: `1px solid rgba(147,204,255,0.15)`, color: GLASS.accent }}
+                  style={{ background: GLASS.bg, border: `1px solid rgba(216,180,254,0.15)`, color: GLASS.accent }}
                   title="Force Scan"
                 >
                   {phase === 'analyzing' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
@@ -644,7 +644,7 @@ export default function VisionMode() {
                 {/* Listening pulse ring — green secondary */}
                 {recState === 'idle' && visionPhase === 'listening' && (
                   <motion.div className="absolute inset-0 rounded-full"
-                    style={{ border: '1.5px solid rgba(108,255,191,0.3)' }}
+                    style={{ border: '1.5px solid rgba(244,114,182,0.3)' }}
                     animate={{ scale: [1, 1.3], opacity: [0.5, 0] }}
                     transition={{ repeat: Infinity, duration: 2, ease: 'easeOut' }}
                   />
@@ -655,10 +655,10 @@ export default function VisionMode() {
                   disabled={visionPhase === 'processing' || visionPhase === 'speaking' || visionPhase === 'greeting'}
                   className="relative w-12 h-12 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-30"
                   style={{
-                    background: recState === 'recording' ? 'rgba(255,68,68,0.15)' : visionPhase === 'listening' ? 'rgba(108,255,191,0.06)' : GLASS.bg,
-                    border: recState === 'recording' ? '1.5px solid rgba(255,68,68,0.5)' : visionPhase === 'listening' ? `1.5px solid rgba(108,255,191,0.25)` : `1px solid rgba(108,255,191,0.15)`,
+                    background: recState === 'recording' ? 'rgba(255,68,68,0.15)' : visionPhase === 'listening' ? 'rgba(244,114,182,0.06)' : GLASS.bg,
+                    border: recState === 'recording' ? '1.5px solid rgba(255,68,68,0.5)' : visionPhase === 'listening' ? `1.5px solid rgba(244,114,182,0.25)` : `1px solid rgba(244,114,182,0.15)`,
                     color: recState === 'recording' ? '#ff4444' : visionPhase === 'listening' ? GLASS.secondary : GLASS.accent,
-                    boxShadow: recState === 'recording' ? '0 0 20px rgba(255,68,68,0.25)' : visionPhase === 'listening' ? '0 0 12px rgba(108,255,191,0.1)' : 'none',
+                    boxShadow: recState === 'recording' ? '0 0 20px rgba(255,68,68,0.25)' : visionPhase === 'listening' ? '0 0 12px rgba(244,114,182,0.1)' : 'none',
                   }}
                   title={recState === 'recording' ? 'Tap to stop' : 'Tap to speak'}
                 >
@@ -677,9 +677,9 @@ export default function VisionMode() {
                 <div className="absolute inset-0 rounded-full transition-all duration-500"
                   style={{
                     background: active
-                      ? 'linear-gradient(135deg, #00AAFF, #0088CC)'
-                      : 'linear-gradient(135deg, #00AAFF, #0088CC)',
-                    boxShadow: '0 4px 20px rgba(0,170,255,0.3)',
+                      ? 'linear-gradient(135deg, #A855F7, #7E22CE)'
+                      : 'linear-gradient(135deg, #A855F7, #7E22CE)',
+                    boxShadow: '0 4px 20px rgba(168,85,247,0.3)',
                   }}
                 />
                 {/* Icon */}
@@ -766,8 +766,8 @@ export default function VisionMode() {
                           ? `linear-gradient(90deg, ${GLASS.secondaryDim}, transparent)`
                           : visionPhase === 'looking' ? 'linear-gradient(90deg, rgba(245,158,11,0.08), transparent)'
                           : visionPhase === 'speaking' ? 'linear-gradient(90deg, rgba(224,182,255,0.08), transparent)'
-                          : `linear-gradient(90deg, rgba(147,204,255,0.06), transparent)`,
-                        border: `1px solid ${visionPhase === 'listening' ? 'rgba(108,255,191,0.15)' : visionPhase === 'looking' ? 'rgba(245,158,11,0.12)' : visionPhase === 'speaking' ? 'rgba(224,182,255,0.12)' : GLASS.border}`,
+                          : `linear-gradient(90deg, rgba(216,180,254,0.06), transparent)`,
+                        border: `1px solid ${visionPhase === 'listening' ? 'rgba(244,114,182,0.15)' : visionPhase === 'looking' ? 'rgba(245,158,11,0.12)' : visionPhase === 'speaking' ? 'rgba(224,182,255,0.12)' : GLASS.border}`,
                       }}
                     >
                       {/* Status dot */}
@@ -806,13 +806,13 @@ export default function VisionMode() {
                     <div className="flex flex-col items-center justify-center py-14 gap-3">
                       {visionPhase === 'greeting' ? (
                         <>
-                          <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'rgba(147,204,255,0.3)' }} />
-                          <p className="text-[11px] text-center" style={{ color: 'rgba(147,204,255,0.3)' }}>Looking at you for the first time...</p>
+                          <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'rgba(216,180,254,0.3)' }} />
+                          <p className="text-[11px] text-center" style={{ color: 'rgba(216,180,254,0.3)' }}>Looking at you for the first time...</p>
                         </>
                       ) : (
                         <>
-                          <Eye className="w-7 h-7" style={{ color: 'rgba(147,204,255,0.15)' }} />
-                          <p className="text-[11px] text-center" style={{ color: 'rgba(147,204,255,0.2)' }}>Open camera to start a visual conversation</p>
+                          <Eye className="w-7 h-7" style={{ color: 'rgba(216,180,254,0.15)' }} />
+                          <p className="text-[11px] text-center" style={{ color: 'rgba(216,180,254,0.2)' }}>Open camera to start a visual conversation</p>
                         </>
                       )}
                     </div>
@@ -831,7 +831,7 @@ export default function VisionMode() {
                             }`}
                             style={{
                               background: msg.role === 'user'
-                                ? 'linear-gradient(135deg, rgba(0,170,255,0.6), rgba(147,204,255,0.4))'
+                                ? 'linear-gradient(135deg, rgba(168,85,247,0.6), rgba(216,180,254,0.4))'
                                 : GLASS.bg,
                               backdropFilter: msg.role === 'assistant' ? 'blur(20px)' : undefined,
                               border: `1px solid ${GLASS.borderAccent}`,
@@ -883,7 +883,7 @@ export default function VisionMode() {
                                   {/* Model badge overlay */}
                                   {msg.imageModelUsed && (
                                     <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[8px] font-black uppercase shadow-md"
-                                      style={{ background: 'linear-gradient(135deg,#00AAFF,#0088CC)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', letterSpacing: '0.03em' }}
+                                      style={{ background: 'linear-gradient(135deg,#A855F7,#7E22CE)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', letterSpacing: '0.03em' }}
                                     >
                                       {msg.imageModelUsed}
                                     </div>
@@ -920,7 +920,7 @@ export default function VisionMode() {
                         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-start max-w-[85%]">
                           <div className="px-5 py-4 rounded-2xl rounded-tl-none shadow-xl" style={{ background: GLASS.bg, backdropFilter: 'blur(20px)', border: `1px solid ${GLASS.borderAccent}` }}>
                             <div className="flex items-center gap-2.5">
-                              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(147,204,255,0.15), rgba(147,204,255,0.05))', border: '1px solid rgba(147,204,255,0.2)' }}>
+                              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(216,180,254,0.15), rgba(216,180,254,0.05))', border: '1px solid rgba(216,180,254,0.2)' }}>
                                 {visionPhase === 'looking' ? <Eye className="w-2.5 h-2.5" style={{ color: '#f59e0b' }} /> : <Bot className="w-2.5 h-2.5" style={{ color: GLASS.accent }} />}
                               </div>
                               <div className="flex gap-1">
@@ -962,11 +962,11 @@ export default function VisionMode() {
                         <Wand2 className="w-3.5 h-3.5 shrink-0" style={{ color: GLASS.textDim }} />
                         <input value={whatIfPrompt} onChange={e => setWhatIfPrompt(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') handleWhatIf(); }}
-                          placeholder="What if this was..." className="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[rgba(147,204,255,0.18)]" style={{ color: GLASS.text }} />
+                          placeholder="What if this was..." className="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[rgba(216,180,254,0.18)]" style={{ color: GLASS.text }} />
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleWhatIf()} disabled={!whatIfPrompt.trim()}
                           className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-30"
-                          style={{ background: whatIfPrompt.trim() ? 'linear-gradient(135deg,#00AAFF,#0088CC)' : GLASS.cardBg }}
+                          style={{ background: whatIfPrompt.trim() ? 'linear-gradient(135deg,#A855F7,#7E22CE)' : GLASS.cardBg }}
                         >
                           <Send className="w-3 h-3 text-white" />
                         </motion.button>
@@ -1063,7 +1063,7 @@ export default function VisionMode() {
                   {!directorResult && !featureBusy && (
                     <SectionCard icon={Clapperboard} title="Scene Director">
                       <div className="flex flex-col items-center gap-3 py-8">
-                        <Film className="w-9 h-9" style={{ color: 'rgba(147,204,255,0.2)' }} />
+                        <Film className="w-9 h-9" style={{ color: 'rgba(216,180,254,0.2)' }} />
                         <p className="text-[11px] text-center max-w-[200px]" style={{ color: GLASS.textDim }}>Turn your scene into a cinematic movie poster</p>
                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleDirector}
                           className="px-5 py-2.5 rounded-full text-[12px] font-semibold cursor-pointer flex items-center gap-2"
@@ -1108,7 +1108,7 @@ export default function VisionMode() {
             {activeFeature === 'live' && (
               <div className="p-6 pt-0 space-y-3 shrink-0" style={{ borderTop: `1px solid ${GLASS.border}` }}>
                 {/* Input Area — glassmorphism with sparkle icon */}
-                <div className="flex items-center gap-4 px-5 py-3 rounded-2xl focus-within:border-[rgba(147,204,255,0.3)] transition-all shadow-inner"
+                <div className="flex items-center gap-4 px-5 py-3 rounded-2xl focus-within:border-[rgba(216,180,254,0.3)] transition-all shadow-inner"
                   style={{ background: GLASS.bg, backdropFilter: 'blur(20px)', border: `1px solid ${GLASS.borderAccent}` }}
                 >
                   <Sparkles className="w-5 h-5 shrink-0" style={{ color: GLASS.textDim }} />
@@ -1122,8 +1122,8 @@ export default function VisionMode() {
                     onClick={() => runAnalysis()} disabled={phase !== 'idle' || !voiceQuery.trim()}
                     className="w-11 h-11 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-30"
                     style={{
-                      background: voiceQuery.trim() ? 'linear-gradient(135deg,#00AAFF,#0088CC)' : 'rgba(147,204,255,0.05)',
-                      boxShadow: voiceQuery.trim() ? '0 0 15px rgba(0,170,255,0.3)' : 'none',
+                      background: voiceQuery.trim() ? 'linear-gradient(135deg,#A855F7,#7E22CE)' : 'rgba(216,180,254,0.05)',
+                      boxShadow: voiceQuery.trim() ? '0 0 15px rgba(168,85,247,0.3)' : 'none',
                     }}
                   >
                     <Send className="w-4.5 h-4.5 text-white" />
@@ -1236,7 +1236,7 @@ function FeatureLoadingState({ label }: { label: string }) {
     >
       <motion.div className="w-14 h-14 rounded-full flex items-center justify-center"
         style={{ background: GLASS.bg, border: `1px solid ${GLASS.borderGlow}` }}
-        animate={{ boxShadow: ['0 0 0 rgba(147,204,255,0)', '0 0 25px rgba(147,204,255,0.1)', '0 0 0 rgba(147,204,255,0)'] }}
+        animate={{ boxShadow: ['0 0 0 rgba(216,180,254,0)', '0 0 25px rgba(216,180,254,0.1)', '0 0 0 rgba(216,180,254,0)'] }}
         transition={{ duration: 1.5, repeat: Infinity }}
       >
         <Loader2 className="w-5 h-5 animate-spin" style={{ color: GLASS.accent }} />

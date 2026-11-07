@@ -64,7 +64,7 @@ export default function VisionBackground() {
       // ── Subtle breathing radial gradient ──────────────────
       const breathe = Math.sin(t * 0.4) * 0.015 + 0.04;
       const grad = ctx.createRadialGradient(cx, cy * 0.9, 0, cx, cy * 0.9, Math.max(w, h) * 0.6);
-      grad.addColorStop(0, `rgba(0, 170, 255, ${breathe})`);
+      grad.addColorStop(0, `rgba(168, 85, 247, ${breathe})`);
       grad.addColorStop(0.5, `rgba(0, 130, 200, ${breathe * 0.3})`);
       grad.addColorStop(1, 'transparent');
       ctx.fillStyle = grad;
@@ -83,7 +83,7 @@ export default function VisionBackground() {
         const pulse = Math.sin(t * 1.5 + p.x * 0.01) * 0.02 + p.opacity;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 170, 255, ${pulse})`;
+        ctx.fillStyle = `rgba(168, 85, 247, ${pulse})`;
         ctx.fill();
       }
 

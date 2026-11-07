@@ -23,7 +23,7 @@ from app.services.yolo_service import detect_objects
 from app.config import MODELS, TEMPERATURE, SUPPORTED_LANGUAGES
 from app.models.schemas import DetectionBox
 
-logger = logging.getLogger("Otari VoxVision.ai.vision")
+logger = logging.getLogger("Aetheris AI.vision")
 
 # ── Rate-limit tracker ────────────────────────────────────────────────────────
 _SKIP_SECS = 90.0
@@ -43,7 +43,7 @@ def _block_kimi() -> None:
 # ── Narration system prompts ─────────────────────────────────────────────────
 
 VISION_SYSTEM_EN = (
-    "You are Otari VoxVision.ai Vision — an AI with live eyes through the user's webcam. "
+    "You are Aetheris AI Vision — an AI with live eyes through the user's webcam. "
     "Your PRIMARY job is to IDENTIFY and NAME every specific object you can see — including brand names "
     "(e.g. Orbit, Pepsi, Samsung, MacBook), product types, clothing, food, furniture, people, text on labels, everything. "
     "ALWAYS start by listing what you see: 'I can see [object1], [object2], [object3]...', then describe the overall scene. "
@@ -63,7 +63,7 @@ def _build_vision_system(language: str) -> str:
     script = lang_info.get("script", "native script")
 
     return (
-        f"You are Otari VoxVision.ai Vision — an AI with live eyes through the user's webcam. "
+        f"You are Aetheris AI Vision — an AI with live eyes through the user's webcam. "
         f"CRITICAL LANGUAGE RULE: You MUST respond ONLY in {lang_name} using {lang_name} native script ({script}). "
         f"DO NOT use English, Latin transliteration, or any other language. "
         f"Write ONLY in authentic {lang_name} unicode characters. "
@@ -196,7 +196,27 @@ async def _detect(image_base64: str) -> List[DetectionBox]:
 # ── Narration pipeline ────────────────────────────────────────────────────────
 
 async def _narrate_oxlo(messages: list) -> str:
-    """Try vision-capable Oxlo models. Returns '' on failure."""
+    """Try Otari Vision VLM (alibaba/qwen3-vl-30b-a3b-instruct) first, then failover to Oxlo vision models."""
+    try:
+        from app.services.otari_gateway import otari_gateway
+        live_otari = otari_gateway.get_otari_client(fast=True)
+        if live_otari is not None:
+            resp = await asyncio.wait_for(
+                live_otari.chat.completions.create(
+                    model="alibaba/qwen3-vl-30b-a3b-instruct",
+                    messages=messages,
+                    max_tokens=250,
+                    temperature=TEMPERATURE,
+                ),
+                timeout=10.0,
+            )
+            text = (resp.choices[0].message.content or "").strip()
+            if text:
+                logger.info("Vision narration success via Otari — model=alibaba/qwen3-vl-30b-a3b-instruct")
+                return text
+    except Exception as otari_exc:
+        logger.info("Otari vision VLM (%s) failing over to secondary vision nodes", otari_exc)
+
     models = [MODELS["vision"]] + list(MODELS.get("vision_fallback", []))
 
     for model in models:

@@ -35,7 +35,7 @@ logger = logging.getLogger("Oxlo VoxVision.ai.vision_voice")
 # ─────────────────────────────────────────────────────────────────────────────
 
 GREETING_SYSTEM_EN = (
-    "You are Otari VoxVision AI — a friendly assistant who can SEE the user through "
+    "You are Aetheris AI — a friendly assistant who can SEE the user through "
     "their webcam. This is your FIRST look at them in this session.\n\n"
     "PRIORITY: Focus on the PERSON first — their appearance, clothing, expression, "
     "posture, any accessories. Then briefly note the environment.\n\n"
@@ -64,7 +64,7 @@ def _build_greeting_system(language: str) -> str:
     script = lang_info.get("script", "native script")
 
     return (
-        f"You are Otari VoxVision AI — a friendly assistant who can SEE the user "
+        f"You are Aetheris AI — a friendly assistant who can SEE the user "
         f"through their webcam. This is your FIRST look at them.\n\n"
         f"CRITICAL LANGUAGE RULE: Respond ONLY in {lang_name} using {script} script. "
         f"NO English, NO transliteration.\n\n"
@@ -82,7 +82,7 @@ def _build_greeting_system(language: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 VISION_CHAT_SYSTEM_EN = (
-    "You are Otari VoxVision AI — a friendly AI assistant who can SEE the user "
+    "You are Aetheris AI — a friendly AI assistant who can SEE the user "
     "through their webcam AND hear them speak. You are having a live voice "
     "conversation with visual awareness.\n\n"
     "The user has spoken to you and you can also see their webcam frame.\n\n"
@@ -112,7 +112,7 @@ def _build_vision_chat_system(language: str) -> str:
     script = lang_info.get("script", "native script")
 
     return (
-        f"You are Otari VoxVision AI — a friendly AI assistant who can SEE the user "
+        f"You are Aetheris AI — a friendly AI assistant who can SEE the user "
         f"through their webcam AND hear them speak.\n\n"
         f"CRITICAL: Respond ONLY in {lang_name} using {script} script. "
         f"NO English, NO transliteration.\n\n"
@@ -520,7 +520,7 @@ async def generate_greeting(
     # Fallback — generic greeting if vision fails
     fallback = (
         "Hey! I can see you through the camera but I'm having a moment — "
-        "welcome to Otari VoxVision AI! How can I help you today?"
+        "welcome to Aetheris AI! How can I help you today?"
     )
     logger.warning("Greeting: all models failed, using fallback")
     return {"greeting_text": fallback, "detections": []}

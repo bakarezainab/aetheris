@@ -70,12 +70,12 @@ _SUPPORTED_LANG_NAMES = ", ".join(
     info["name"] for info in SUPPORTED_LANGUAGES.values()
 )
 
-SYSTEM_PROMPT_VOICE = f"""You're Otari VoxVision AI — a smart assistant designed to help with voice, images, and conversations.
+SYSTEM_PROMPT_VOICE = f"""You're Aetheris AI — a smart assistant designed to help with voice, images, and conversations.
 
 CONTEXT: The user is SPEAKING through a microphone. Respond naturally, like a knowledgeable friend talking.
 
 IDENTITY AND SELF-KNOWLEDGE:
-- Your name is Otari VoxVision AI.
+- Your name is Aetheris AI.
 - You support {_SUPPORTED_LANG_COUNT} languages: {_SUPPORTED_LANG_NAMES}.
 - Your key strengths compared to other models:
   • Combined voice + vision + image generation in one assistant
@@ -93,7 +93,7 @@ RESPONSE STRUCTURE (CRITICAL):
 - Put each item on its own line.
 - Separate sections with a blank line.
 - Example structure:
-  I'm Otari VoxVision AI — your smart voice and image assistant.
+  I'm Aetheris AI — your smart voice and image assistant.
 
   Here's what I can do:
   • Answer questions in {_SUPPORTED_LANG_COUNT} languages
@@ -138,10 +138,10 @@ EMOJI RULE:
 - You may use actual emoji characters naturally (e.g., 😊 🔥 ✅ 🚀).
 - NEVER describe emojis in words. Never write "(smiley face)" or "(thumbs up)" — use the actual character or don't use any."""
 
-SYSTEM_PROMPT_TEXT = f"""You're Otari VoxVision AI — a smart assistant designed to help with voice, images, and conversations.
+SYSTEM_PROMPT_TEXT = f"""You're Aetheris AI — a smart assistant designed to help with voice, images, and conversations.
 
 IDENTITY AND SELF-KNOWLEDGE:
-- Your name is Otari VoxVision AI.
+- Your name is Aetheris AI.
 - You support {_SUPPORTED_LANG_COUNT} languages: {_SUPPORTED_LANG_NAMES}.
 - Your key strengths compared to other models:
   • Combined voice + vision + image generation in one assistant
@@ -194,7 +194,7 @@ EMOJI RULE:
 # ── GREETING INSTRUCTION (injected when history is empty) ─────────────────────
 GREETING_INSTRUCTION = """
 This is the VERY FIRST message from the user in this session.
-Start your response with a brief, warm greeting: "Hey! I'm Otari VoxVision AI. "
+Start your response with a brief, warm greeting: "Hey! I'm Aetheris AI. "
 Then directly answer their question or respond naturally.
 Do NOT repeat the greeting on subsequent messages."""
 
@@ -621,17 +621,39 @@ async def chat_stream(
         otari_gateway._mark_feature("model_routing_fallbacks")
         otari_gateway._mark_feature("multiple_models_roles")
 
-        live_otari = otari_gateway.get_otari_client()
-        active_client = live_otari if live_otari is not None else client
-
-        stream = await active_client.chat.completions.create(
-            model=target_model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temp,
-            top_p=top_p,
-            stream=True,
+        live_otari = otari_gateway.get_otari_client(fast=True)
+        otari_model_id = (
+            "alibaba/qwen3-32b" if mode == "voice" else "alibaba/qwen-3.5-35b-a3b"
         )
+        used_fallback = False
+        used_model_label = f"{otari_model_id} (via Otari Gateway)"
+
+        stream = None
+        if live_otari is not None and target_model in (MODELS["chat"], MODELS["chat_voice"]):
+            try:
+                stream = await live_otari.chat.completions.create(
+                    model=otari_model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temp,
+                    top_p=top_p,
+                    stream=True,
+                )
+            except Exception as otari_err:
+                logger.warning(f"Otari primary ({otari_model_id}) returned {otari_err}; failing over to secondary node ({target_model})")
+                used_fallback = True
+                used_model_label = f"{target_model} (Otari Failover Chain)"
+
+        if stream is None:
+            stream = await client.chat.completions.create(
+                model=target_model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temp,
+                top_p=top_p,
+                stream=True,
+            )
+
         emitted_chars = 0
         async for chunk in stream:
             delta = chunk.choices[0].delta.content
@@ -641,13 +663,19 @@ async def chat_stream(
 
         _lat = (_time.perf_counter() - _t0) * 1000.0
         _tok = max(80, int((len(final_input) + emitted_chars) / 4))
-        _cost = otari_gateway.record_spend("user_default", "voice_chat" if mode == "voice" else "reasoning", _tok, _lat, False)
+        _cost = otari_gateway.record_spend(
+            "user_default",
+            "voice_chat" if mode == "voice" else "reasoning",
+            _tok,
+            _lat,
+            used_fallback,
+        )
         otari_gateway._log_telemetry(
             route="POST /api/v1/chat/completions [stream]",
             role="voice_chat" if mode == "voice" else "reasoning",
-            primary_model=target_model,
-            model_used=f"{target_model} (via Otari Gateway)",
-            fallback_used=False,
+            primary_model=otari_model_id,
+            model_used=used_model_label,
+            fallback_used=used_fallback,
             latency_ms=_lat,
             tokens=_tok,
             cost_usd=_cost,

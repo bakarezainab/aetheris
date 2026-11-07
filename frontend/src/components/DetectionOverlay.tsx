@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { DetectionBox } from '../types';
 
 // Electric blue palette for detection boxes
-const COLORS = ['#00AAFF', '#0099E6', '#0088CC', '#33BBFF', '#66CCFF', '#007AB3'];
+const COLORS = ['#A855F7', '#0099E6', '#7E22CE', '#33BBFF', '#66CCFF', '#007AB3'];
 
 interface Props {
   detections: DetectionBox[];

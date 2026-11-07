@@ -41,9 +41,9 @@ export default function MiniAIAssistant({ phase, isGeneratingImage, hasMessages 
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             className="relative pr-8 pl-4 py-2.5 rounded-2xl shadow-xl pointer-events-auto"
             style={{
-              background: 'rgba(5, 7, 13, 0.85)',
+              background: 'rgba(7, 5, 16, 0.85)',
               backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(0,170,255,0.2)',
+              border: '1px solid rgba(168,85,247,0.2)',
               color: 'rgba(255,255,255,0.9)',
               fontSize: '12px',
               maxWidth: '220px',
@@ -68,16 +68,16 @@ export default function MiniAIAssistant({ phase, isGeneratingImage, hasMessages 
       <motion.div
         animate={{
           boxShadow: [
-            '0 0 15px rgba(0,170,255,0.2)',
-            '0 0 25px rgba(0,170,255,0.6)',
-            '0 0 15px rgba(0,170,255,0.2)'
+            '0 0 15px rgba(168,85,247,0.2)',
+            '0 0 25px rgba(168,85,247,0.6)',
+            '0 0 15px rgba(168,85,247,0.2)'
           ],
         }}
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
         className="w-12 h-12 rounded-full flex items-center justify-center pointer-events-auto cursor-pointer"
         style={{
-          background: 'radial-gradient(circle at 30% 30%, #00AAFF, #004488)',
-          border: '1px solid rgba(0,170,255,0.4)',
+          background: 'radial-gradient(circle at 30% 30%, #A855F7, #004488)',
+          border: '1px solid rgba(168,85,247,0.4)',
         }}
         onClick={() => setIsVisible(v => !v)}
       >

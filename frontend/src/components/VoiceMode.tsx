@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic, Square, Loader2, User, Bot, RotateCcw,
   ImagePlus, Send, Download, RefreshCw, Maximize2, X,
-  ChevronDown, Zap, Crown,
+  ChevronDown, Zap, Crown, MessageSquare,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { transcribeAudio, streamChat, speakText } from '../api/voice';
+import { runOtariChat } from '../api/otari';
 import { generateImage } from '../api/image';
 import { generateCompound, isCompoundPrompt } from '../api/compound';
 import { cleanResponse } from '../utils/textCleaners';
@@ -40,7 +41,7 @@ export default function VoiceMode() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hi! I\'m Otari VoxVision Protocol — your sovereign open-weight voice and vision node. How can I help you today? ⚡',
+      content: 'Hi! I\'m Aetheris AI — your multimodal voice, text, and vision assistant powered by Mozilla.ai Otari. How can I help you today?',
       timestamp: Date.now(),
     },
   ]);
@@ -58,6 +59,8 @@ export default function VoiceMode() {
 
   // ── Image generation state ─────────────────────────────────
   const [showImagePanel, setShowImagePanel] = useState(false);
+  const [showTextPanel, setShowTextPanel] = useState(false);
+  const [textPrompt, setTextPrompt] = useState('');
   const [imagePrompt, setImagePrompt] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ImageModel>('oxlo-image-pro');
@@ -154,7 +157,7 @@ export default function VoiceMode() {
         setDetectedLanguageName(langName);
         if (result.engine) setSttEngine(result.engine);
         if (lang !== 'en') {
-          toast(`🌐 ${langName} detected`, { duration: 2000, style: { background: 'rgba(0,100,200,0.85)', color: '#fff', fontSize: '13px' } });
+          toast(`🌐 ${langName} detected`, { duration: 2000, style: { background: 'rgba(126,34,206,0.85)', color: '#fff', fontSize: '13px' } });
         }
 
         // ── Check if this is a COMPOUND request (image + explained text) ──
@@ -398,6 +401,40 @@ export default function VoiceMode() {
     if (stream) startVAD(stream);
   };
 
+  const handleTextSend = useCallback(async () => {
+    const promptToSend = textPrompt.trim();
+    if (!promptToSend || phase !== 'idle' || isGeneratingImage) return;
+    addMsg('user', promptToSend);
+    setTextPrompt('');
+    setShowTextPanel(false);
+    setPhase('thinking');
+    setStreamingText('');
+    try {
+      let full = '';
+      try {
+        for await (const token of streamChat(
+          promptToSend,
+          historyRef.current.slice(0, -1),
+          { mode: 'text', input_type: 'text', language: detectedLanguage }
+        )) {
+          full += token;
+          setStreamingText(cleanResponse(full));
+        }
+      } catch {
+        const res = await runOtariChat({ prompt: promptToSend, role: 'voice_chat', user_id: 'user_default' });
+        full = res.response;
+      }
+      const cleaned = cleanResponse(full);
+      addMsg('assistant', cleaned);
+      setStreamingText('');
+      setPhase('idle');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send text prompt');
+      setStreamingText('');
+      setPhase('idle');
+    }
+  }, [textPrompt, phase, isGeneratingImage, detectedLanguage]);
+
   const isBusy = phase === 'transcribing' || phase === 'thinking' || phase === 'speaking' || phase === 'generating_image';
   const isAnythingBusy = isBusy || isGeneratingImage;
 
@@ -420,7 +457,7 @@ export default function VoiceMode() {
     : null;
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden" style={{ background: '#05070D' }}>
+    <div className="h-full flex flex-col relative overflow-hidden" style={{ background: '#070510' }}>
 
       {/* ── Looping Video Background ──────────────────────────── */}
       <video
@@ -429,13 +466,13 @@ export default function VoiceMode() {
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ opacity: 0.85, mixBlendMode: 'screen' }}
+        style={{ opacity: 0.85, mixBlendMode: 'screen', filter: 'hue-rotate(70deg)' }}
         src="https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4"
       />
 
       {/* Dark overlay */}
       <div className="absolute inset-0 z-[1] pointer-events-none" style={{
-        background: 'radial-gradient(circle at center 40%, transparent 30%, rgba(5,7,13,0.7) 70%, rgba(5,7,13,0.95) 100%)',
+        background: 'radial-gradient(circle at center 40%, transparent 30%, rgba(7,5,16,0.7) 70%, rgba(7,5,16,0.95) 100%)',
       }} />
 
       {/* ── Content Layer ──────────────────────────────────────── */}
@@ -453,7 +490,7 @@ export default function VoiceMode() {
             >
               {messages.length <= 1 && phase === 'idle' && !isGeneratingImage ? (
                 <>
-                  <h2 className="text-5xl font-bold" style={{ color: '#00AAFF', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
+                  <h2 className="text-5xl font-bold" style={{ color: '#A855F7', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
                     What can I help with?
                   </h2>
                 </>
@@ -466,7 +503,7 @@ export default function VoiceMode() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     className="text-base font-semibold uppercase"
-                    style={{ color: 'rgba(0, 170, 255, 0.7)', letterSpacing: '0.04em' }}
+                    style={{ color: 'rgba(168, 85, 247, 0.7)', letterSpacing: '0.04em' }}
                   >
                     {isGeneratingImage ? 'Generating Image...' : statusText}
                   </motion.p>
@@ -484,9 +521,9 @@ export default function VoiceMode() {
                       {/* Language pill */}
                       <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-medium"
                         style={{
-                          background: 'rgba(0, 130, 255, 0.08)',
-                          border: '1px solid rgba(0, 170, 255, 0.2)',
-                          color: 'rgba(0, 170, 255, 0.85)',
+                          background: 'rgba(168, 85, 247, 0.08)',
+                          border: '1px solid rgba(168, 85, 247, 0.2)',
+                          color: 'rgba(168, 85, 247, 0.85)',
                           backdropFilter: 'blur(8px)',
                         }}
                       >
@@ -535,23 +572,23 @@ export default function VoiceMode() {
                 className="flex gap-4 items-start"
               >
                 <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center mt-1"
-                  style={{ background: 'linear-gradient(135deg, #00AAFF, #0088CC)', boxShadow: '0 0 15px rgba(0,170,255,0.4)' }}
+                  style={{ background: 'linear-gradient(135deg, #A855F7, #7E22CE)', boxShadow: '0 0 15px rgba(168,85,247,0.4)' }}
                 >
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 px-5 py-4 rounded-3xl rounded-tl-sm text-[15px] leading-relaxed shadow-xl"
                   style={{
-                    background: 'rgba(0, 170, 255, 0.04)',
+                    background: 'rgba(168, 85, 247, 0.04)',
                     backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(0, 170, 255, 0.1)',
-                    color: '#e0f0ff',
+                    border: '1px solid rgba(168, 85, 247, 0.1)',
+                    color: '#f3e8ff',
                     whiteSpace: 'pre-wrap',
                   }}
                 >
                   {streamingText}
                   <motion.span
                     className="inline-block w-1.5 h-4 ml-1 align-middle rounded-full"
-                    style={{ background: '#00AAFF' }}
+                    style={{ background: '#A855F7' }}
                     animate={{ opacity: [1, 0] }}
                     transition={{ repeat: Infinity, duration: 0.8 }}
                   />
@@ -570,8 +607,8 @@ export default function VoiceMode() {
               <div
                 className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center mt-1"
                 style={{
-                  background: 'linear-gradient(135deg, #00AAFF, #0088CC)',
-                  boxShadow: '0 0 15px rgba(0,170,255,0.4)',
+                  background: 'linear-gradient(135deg, #A855F7, #7E22CE)',
+                  boxShadow: '0 0 15px rgba(168,85,247,0.4)',
                 }}
               >
                 <Bot className="w-4 h-4 text-white" />
@@ -579,14 +616,14 @@ export default function VoiceMode() {
               <div
                 className="flex-1 px-5 py-4 rounded-3xl rounded-tl-sm"
                 style={{
-                  background: 'rgba(0,170,255,0.04)',
+                  background: 'rgba(168,85,247,0.04)',
                   backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(0,170,255,0.1)',
+                  border: '1px solid rgba(168,85,247,0.1)',
                 }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#00AAFF' }} />
-                  <span className="text-sm font-medium" style={{ color: 'rgba(0,170,255,0.7)' }}>
+                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#A855F7' }} />
+                  <span className="text-sm font-medium" style={{ color: 'rgba(168,85,247,0.7)' }}>
                     Generating your image...
                   </span>
                 </div>
@@ -606,6 +643,71 @@ export default function VoiceMode() {
       {/* ── Floating Control Dock ───────────────────────────────── */}
       <div className="absolute bottom-6 left-0 right-0 z-20 flex flex-col items-center px-4 pointer-events-none gap-3">
         
+        {/* ── Text Prompt Input Panel (Slide-up Glass Card) ──────── */}
+        <AnimatePresence>
+          {showTextPanel && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+              className="pointer-events-auto w-full max-w-3xl rounded-[28px] shadow-2xl"
+              style={{
+                background: 'rgba(7, 5, 16, 0.88)',
+                backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(168,85,247,0.18)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(168,85,247,0.08)',
+              }}
+            >
+              <div className="flex items-center justify-between px-5 pt-3 pb-1">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" style={{ color: 'rgba(168,85,247,0.7)' }} />
+                  <span className="text-[11px] font-medium uppercase" style={{ color: 'rgba(168,85,247,0.6)', letterSpacing: '0.04em' }}>
+                    Otari Text Prompt
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowTextPanel(false)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-colors"
+                  style={{ color: 'rgba(168,85,247,0.5)' }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex items-center gap-3 px-4 pb-3 pt-1">
+                <input
+                  type="text"
+                  value={textPrompt}
+                  onChange={e => setTextPrompt(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleTextSend();
+                    }
+                  }}
+                  placeholder="Type your message or question for Aetheris AI..."
+                  className="flex-1 bg-transparent outline-none text-[15px] py-2.5 px-2 placeholder:text-[rgba(168,85,247,0.35)]"
+                  style={{ color: '#f3e8ff' }}
+                  autoFocus
+                />
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleTextSend()}
+                  disabled={!textPrompt.trim() || isAnythingBusy}
+                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-30"
+                  style={{
+                    background: textPrompt.trim() ? 'linear-gradient(135deg, #A855F7, #7E22CE)' : 'rgba(168,85,247,0.08)',
+                    boxShadow: textPrompt.trim() ? '0 0 20px rgba(168,85,247,0.35)' : 'none',
+                  }}
+                >
+                  <Send className="w-5 h-5 text-white" />
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ── Image Generation Input Panel ─────────────────────── */}
         <AnimatePresence>
           {showImagePanel && (
@@ -616,24 +718,24 @@ export default function VoiceMode() {
               transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
               className="pointer-events-auto w-full max-w-3xl rounded-[28px] shadow-2xl"
               style={{
-                background: 'rgba(5, 7, 13, 0.85)',
+                background: 'rgba(7, 5, 16, 0.85)',
                 backdropFilter: 'blur(24px)',
-                border: '1px solid rgba(0,170,255,0.12)',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(0,170,255,0.06)',
+                border: '1px solid rgba(168,85,247,0.12)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(168,85,247,0.06)',
               }}
             >
               {/* Close button */}
               <div className="flex items-center justify-between px-5 pt-3 pb-0">
                 <div className="flex items-center gap-2">
-                  <ImagePlus className="w-4 h-4" style={{ color: 'rgba(0,170,255,0.5)' }} />
-                  <span className="text-[11px] font-medium uppercase" style={{ color: 'rgba(0,170,255,0.4)', letterSpacing: '0.04em' }}>
+                  <ImagePlus className="w-4 h-4" style={{ color: 'rgba(168,85,247,0.5)' }} />
+                  <span className="text-[11px] font-medium uppercase" style={{ color: 'rgba(168,85,247,0.4)', letterSpacing: '0.04em' }}>
                     Image Generation
                   </span>
                 </div>
                 <button
                   onClick={() => setShowImagePanel(false)}
                   className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-                  style={{ color: 'rgba(0,170,255,0.4)' }}
+                  style={{ color: 'rgba(168,85,247,0.4)' }}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -647,9 +749,9 @@ export default function VoiceMode() {
                     onClick={() => { setShowModelPicker(p => !p); setShowSizePicker(false); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase transition-all cursor-pointer"
                     style={{
-                      background: 'rgba(0,170,255,0.05)',
-                      border: '1px solid rgba(0,170,255,0.12)',
-                      color: 'rgba(0,170,255,0.5)',
+                      background: 'rgba(168,85,247,0.05)',
+                      border: '1px solid rgba(168,85,247,0.12)',
+                      color: 'rgba(168,85,247,0.5)',
                       letterSpacing: '0.03em',
                     }}
                   >
@@ -667,7 +769,7 @@ export default function VoiceMode() {
                         style={{
                           background: 'rgba(10, 15, 25, 0.95)',
                           backdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(0,170,255,0.15)',
+                          border: '1px solid rgba(168,85,247,0.15)',
                           minWidth: '200px',
                         }}
                       >
@@ -677,9 +779,9 @@ export default function VoiceMode() {
                             onClick={() => { setSelectedModel(id); setShowModelPicker(false); }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer"
                             style={{
-                              background: selectedModel === id ? 'rgba(0,170,255,0.08)' : 'transparent',
-                              color: selectedModel === id ? '#00AAFF' : 'rgba(0,170,255,0.5)',
-                              borderBottom: '1px solid rgba(0,170,255,0.06)',
+                              background: selectedModel === id ? 'rgba(168,85,247,0.08)' : 'transparent',
+                              color: selectedModel === id ? '#A855F7' : 'rgba(168,85,247,0.5)',
+                              borderBottom: '1px solid rgba(168,85,247,0.06)',
                             }}
                           >
                             <info.icon className="w-4 h-4" />
@@ -700,9 +802,9 @@ export default function VoiceMode() {
                     onClick={() => { setShowSizePicker(p => !p); setShowModelPicker(false); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase transition-all cursor-pointer"
                     style={{
-                      background: 'rgba(0,170,255,0.05)',
-                      border: '1px solid rgba(0,170,255,0.12)',
-                      color: 'rgba(0,170,255,0.5)',
+                      background: 'rgba(168,85,247,0.05)',
+                      border: '1px solid rgba(168,85,247,0.12)',
+                      color: 'rgba(168,85,247,0.5)',
                       letterSpacing: '0.03em',
                     }}
                   >
@@ -719,7 +821,7 @@ export default function VoiceMode() {
                         style={{
                           background: 'rgba(10, 15, 25, 0.95)',
                           backdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(0,170,255,0.15)',
+                          border: '1px solid rgba(168,85,247,0.15)',
                           minWidth: '160px',
                         }}
                       >
@@ -729,9 +831,9 @@ export default function VoiceMode() {
                             onClick={() => { setSelectedSize(size); setShowSizePicker(false); }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer"
                             style={{
-                              background: selectedSize === size ? 'rgba(0,170,255,0.08)' : 'transparent',
-                              color: selectedSize === size ? '#00AAFF' : 'rgba(0,170,255,0.5)',
-                              borderBottom: '1px solid rgba(0,170,255,0.06)',
+                              background: selectedSize === size ? 'rgba(168,85,247,0.08)' : 'transparent',
+                              color: selectedSize === size ? '#A855F7' : 'rgba(168,85,247,0.5)',
+                              borderBottom: '1px solid rgba(168,85,247,0.06)',
                             }}
                           >
                             <span className="text-sm font-medium">{label}</span>
@@ -754,8 +856,8 @@ export default function VoiceMode() {
                   placeholder="Type or say: Create an image of a sunset over mountains..."
                   rows={1}
                   disabled={isGeneratingImage}
-                  className="flex-1 resize-none bg-transparent outline-none text-[15px] leading-relaxed py-2.5 px-2 placeholder:text-[rgba(0,170,255,0.25)] disabled:opacity-40"
-                  style={{ color: '#e0f0ff', maxHeight: '120px' }}
+                  className="flex-1 resize-none bg-transparent outline-none text-[15px] leading-relaxed py-2.5 px-2 placeholder:text-[rgba(168,85,247,0.25)] disabled:opacity-40"
+                  style={{ color: '#f3e8ff', maxHeight: '120px' }}
                 />
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -765,15 +867,15 @@ export default function VoiceMode() {
                   className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 mb-0.5"
                   style={{
                     background: imagePrompt.trim() && !isGeneratingImage
-                      ? 'linear-gradient(135deg, #00AAFF, #0088CC)'
-                      : 'rgba(0,170,255,0.06)',
+                      ? 'linear-gradient(135deg, #A855F7, #7E22CE)'
+                      : 'rgba(168,85,247,0.06)',
                     boxShadow: imagePrompt.trim() && !isGeneratingImage
-                      ? '0 0 20px rgba(0,170,255,0.3)'
+                      ? '0 0 20px rgba(168,85,247,0.3)'
                       : 'none',
                   }}
                 >
                   {isGeneratingImage ? (
-                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(0,170,255,0.5)' }} />
+                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(168,85,247,0.5)' }} />
                   ) : (
                     <Send className="w-5 h-5 text-white" />
                   )}
@@ -786,10 +888,10 @@ export default function VoiceMode() {
         {/* ── Voice Controls + Image Toggle ─────────────────────── */}
         <div className="pointer-events-auto flex items-center gap-4 p-3 rounded-[32px] shadow-xl"
           style={{
-            background: 'rgba(5, 7, 13, 0.7)',
+            background: 'rgba(7, 5, 16, 0.7)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(0, 170, 255, 0.1)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,170,255,0.05)',
+            border: '1px solid rgba(168, 85, 247, 0.1)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(168,85,247,0.05)',
           }}
         >
           
@@ -799,32 +901,49 @@ export default function VoiceMode() {
               <motion.button
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                whileHover={{ scale: 1.1, boxShadow: '0 0 12px rgba(0,170,255,0.2)' }}
+                whileHover={{ scale: 1.1, boxShadow: '0 0 12px rgba(168,85,247,0.2)' }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => { setMessages([{
                   role: 'assistant',
-                  content: 'Hi! I\'m Otari VoxVision Protocol — your sovereign open-weight voice and vision node. How can I help you today? ⚡',
+                  content: 'Hi! I\'m Aetheris AI — your multimodal voice, text, and vision assistant powered by Mozilla.ai Otari. How can I help you today?',
                   timestamp: Date.now(),
                 }]); historyRef.current = []; }}
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer"
-                style={{ background: 'rgba(0,170,255,0.05)', color: 'rgba(0,170,255,0.5)' }}
+                style={{ background: 'rgba(168,85,247,0.05)', color: 'rgba(168,85,247,0.5)' }}
               >
                 <RotateCcw className="w-4 h-4" />
               </motion.button>
             )}
           </div>
 
+          {/* Text Prompt Toggle Button */}
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => { setShowTextPanel(p => !p); setShowImagePanel(false); }}
+            title="Type a Text Prompt"
+            className="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all"
+            style={{
+              background: showTextPanel ? 'rgba(168,85,247,0.16)' : 'rgba(168,85,247,0.06)',
+              border: showTextPanel ? '1px solid rgba(168,85,247,0.4)' : '1px solid rgba(168,85,247,0.14)',
+              color: showTextPanel ? '#A855F7' : 'rgba(168,85,247,0.6)',
+              boxShadow: showTextPanel ? '0 0 15px rgba(168,85,247,0.2)' : 'none',
+            }}
+          >
+            <MessageSquare className="w-5 h-5" />
+          </motion.button>
+
           {/* Image Toggle Button */}
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
-            onClick={() => setShowImagePanel(p => !p)}
+            onClick={() => { setShowImagePanel(p => !p); setShowTextPanel(false); }}
             className="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all"
             style={{
-              background: showImagePanel ? 'rgba(0,170,255,0.12)' : 'rgba(0,170,255,0.05)',
-              border: showImagePanel ? '1px solid rgba(0,170,255,0.3)' : '1px solid rgba(0,170,255,0.1)',
-              color: showImagePanel ? '#00AAFF' : 'rgba(0,170,255,0.5)',
-              boxShadow: showImagePanel ? '0 0 15px rgba(0,170,255,0.15)' : 'none',
+              background: showImagePanel ? 'rgba(168,85,247,0.12)' : 'rgba(168,85,247,0.05)',
+              border: showImagePanel ? '1px solid rgba(168,85,247,0.3)' : '1px solid rgba(168,85,247,0.1)',
+              color: showImagePanel ? '#A855F7' : 'rgba(168,85,247,0.5)',
+              boxShadow: showImagePanel ? '0 0 15px rgba(168,85,247,0.15)' : 'none',
             }}
           >
             <ImagePlus className="w-5 h-5" />
@@ -842,13 +961,13 @@ export default function VoiceMode() {
                 background: recState === 'recording'
                   ? 'linear-gradient(135deg, #FF8C00, #E06000)'
                   : isAnythingBusy
-                    ? 'rgba(0,170,255,0.05)'
-                    : 'linear-gradient(135deg, #00AAFF, #0088CC)',
+                    ? 'rgba(168,85,247,0.05)'
+                    : 'linear-gradient(135deg, #A855F7, #7E22CE)',
                 boxShadow: recState === 'recording'
                   ? '0 0 30px rgba(255,140,0,0.35)'
                   : isAnythingBusy
                     ? 'none'
-                    : '0 0 30px rgba(0,170,255,0.3)',
+                    : '0 0 30px rgba(168,85,247,0.3)',
               }}
             />
             
@@ -865,13 +984,13 @@ export default function VoiceMode() {
               <>
                  <motion.div
                    className="absolute inset-0 rounded-full"
-                   style={{ background: 'rgba(0,170,255,0.25)' }}
+                   style={{ background: 'rgba(168,85,247,0.25)' }}
                    animate={{ scale: [1, 1.6], opacity: [0.6, 0] }}
                    transition={{ repeat: Infinity, duration: 2, ease: "easeOut" }}
                  />
                  <motion.div
                    className="absolute inset-0 rounded-full"
-                   style={{ border: '2px solid rgba(0,170,255,0.8)' }}
+                   style={{ border: '2px solid rgba(168,85,247,0.8)' }}
                    animate={{ scale: [1, 1.4], opacity: [0.8, 0] }}
                    transition={{ repeat: Infinity, duration: 2, ease: "easeOut", delay: 0.5 }}
                  />
@@ -880,7 +999,7 @@ export default function VoiceMode() {
             
             <div className="relative z-10">
               {isAnythingBusy ? (
-                <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'rgba(0,170,255,0.6)' }} />
+                <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'rgba(168,85,247,0.6)' }} />
               ) : recState === 'recording' ? (
                 <Square className="w-5 h-5 text-white" />
               ) : (
@@ -910,7 +1029,7 @@ export default function VoiceMode() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   className="text-xs font-medium uppercase"
-                  style={{ color: 'rgba(0, 170, 255, 0.7)', fontSize: '11px', letterSpacing: '0.04em' }}
+                  style={{ color: 'rgba(168, 85, 247, 0.7)', fontSize: '11px', letterSpacing: '0.04em' }}
                 >
                   {isGeneratingImage ? 'Generating image...'
                     : phase === 'transcribing' ? 'Processing...'
@@ -952,15 +1071,15 @@ export default function VoiceMode() {
                 src={lightboxImage}
                 alt="Generated image fullscreen"
                 className="rounded-2xl shadow-2xl max-w-full max-h-[85vh] object-contain"
-                style={{ border: '1px solid rgba(0,170,255,0.2)' }}
+                style={{ border: '1px solid rgba(168,85,247,0.2)' }}
               />
               <button
                 onClick={() => setLightboxImage(null)}
                 className="absolute -top-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
                 style={{
-                  background: 'rgba(5,7,13,0.9)',
-                  border: '1px solid rgba(0,170,255,0.2)',
-                  color: '#00AAFF',
+                  background: 'rgba(7,5,16,0.9)',
+                  border: '1px solid rgba(168,85,247,0.2)',
+                  color: '#A855F7',
                 }}
               >
                 <X className="w-5 h-5" />
@@ -1000,14 +1119,14 @@ function MessageBubble({
         className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center mt-1"
         style={{
           background: isUser
-            ? 'rgba(0, 170, 255, 0.06)'
-            : 'linear-gradient(135deg, #00AAFF, #0088CC)',
-          border: isUser ? '1px solid rgba(0, 170, 255, 0.15)' : 'none',
-          boxShadow: isUser ? 'none' : '0 0 15px rgba(0,170,255,0.3)',
+            ? 'rgba(168, 85, 247, 0.06)'
+            : 'linear-gradient(135deg, #A855F7, #7E22CE)',
+          border: isUser ? '1px solid rgba(168, 85, 247, 0.15)' : 'none',
+          boxShadow: isUser ? 'none' : '0 0 15px rgba(168,85,247,0.3)',
         }}
       >
         {isUser
-          ? <User className="w-4 h-4" style={{ color: 'rgba(0, 170, 255, 0.6)' }} />
+          ? <User className="w-4 h-4" style={{ color: 'rgba(168, 85, 247, 0.6)' }} />
           : <Bot className="w-5 h-5 text-white" />}
       </div>
 
@@ -1022,10 +1141,10 @@ function MessageBubble({
               isUser ? 'rounded-3xl rounded-tr-sm' : 'rounded-3xl rounded-tl-sm'
             }`}
             style={{
-              background: isUser ? 'rgba(0, 170, 255, 0.04)' : 'rgba(0, 170, 255, 0.06)',
+              background: isUser ? 'rgba(168, 85, 247, 0.04)' : 'rgba(168, 85, 247, 0.06)',
               backdropFilter: 'blur(20px)',
-              border: `1px solid rgba(0, 170, 255, ${isUser ? '0.08' : '0.15'})`,
-              color: '#e0f0ff',
+              border: `1px solid rgba(168, 85, 247, ${isUser ? '0.08' : '0.15'})`,
+              color: '#f3e8ff',
             }}
           >
             {isUser ? message.content : <FormattedText text={message.content} />}
@@ -1043,8 +1162,8 @@ function MessageBubble({
             <div
               className="rounded-2xl overflow-hidden inline-block cursor-pointer"
               style={{
-                border: '1px solid rgba(0,170,255,0.15)',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 20px rgba(0,170,255,0.06)',
+                border: '1px solid rgba(168,85,247,0.15)',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 20px rgba(168,85,247,0.06)',
                 maxWidth: '400px',
               }}
               onClick={() => onImageClick(message.imageUrl!)}
@@ -1072,9 +1191,9 @@ function MessageBubble({
                 onClick={() => onDownload(message.imageUrl!, message.content)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium cursor-pointer"
                 style={{
-                  background: 'rgba(0,170,255,0.05)',
-                  border: '1px solid rgba(0,170,255,0.12)',
-                  color: 'rgba(0,170,255,0.6)',
+                  background: 'rgba(168,85,247,0.05)',
+                  border: '1px solid rgba(168,85,247,0.12)',
+                  color: 'rgba(168,85,247,0.6)',
                 }}
               >
                 <Download className="w-3 h-3" />
@@ -1091,9 +1210,9 @@ function MessageBubble({
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium cursor-pointer"
                 style={{
-                  background: 'rgba(0,170,255,0.05)',
-                  border: '1px solid rgba(0,170,255,0.12)',
-                  color: 'rgba(0,170,255,0.6)',
+                  background: 'rgba(168,85,247,0.05)',
+                  border: '1px solid rgba(168,85,247,0.12)',
+                  color: 'rgba(168,85,247,0.6)',
                 }}
               >
                 <RefreshCw className="w-3 h-3" />
@@ -1102,9 +1221,9 @@ function MessageBubble({
               {message.metadata?.model_used && (
                 <span className="text-[10px] font-medium uppercase px-2 py-1 rounded-full"
                   style={{
-                    color: 'rgba(0,170,255,0.3)',
-                    background: 'rgba(0,170,255,0.03)',
-                    border: '1px solid rgba(0,170,255,0.06)',
+                    color: 'rgba(168,85,247,0.3)',
+                    background: 'rgba(168,85,247,0.03)',
+                    border: '1px solid rgba(168,85,247,0.06)',
                     letterSpacing: '0.03em',
                   }}
                 >
@@ -1137,9 +1256,9 @@ function StructuredTextRenderer({ text }: { text: string }) {
       transition={{ delay: 0.2 }}
       className="rounded-3xl rounded-tl-sm overflow-hidden shadow-xl"
       style={{
-        background: 'rgba(0, 170, 255, 0.03)',
+        background: 'rgba(168, 85, 247, 0.03)',
         backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(0, 170, 255, 0.12)',
+        border: '1px solid rgba(168, 85, 247, 0.12)',
       }}
     >
       {sections.map((section, i) => (
@@ -1147,14 +1266,14 @@ function StructuredTextRenderer({ text }: { text: string }) {
           key={i}
           className="px-6 py-4"
           style={{
-            borderBottom: i < sections.length - 1 ? '1px solid rgba(0,170,255,0.06)' : 'none',
+            borderBottom: i < sections.length - 1 ? '1px solid rgba(168,85,247,0.06)' : 'none',
           }}
         >
           {/* Section Header */}
           {section.header && (
             <div className="flex items-center gap-2.5 mb-3">
               <span className="text-lg">{section.emoji}</span>
-              <h3 className="text-[15px] font-bold" style={{ color: '#00AAFF' }}>
+              <h3 className="text-[15px] font-bold" style={{ color: '#A855F7' }}>
                 {section.header}
               </h3>
             </div>
@@ -1171,9 +1290,9 @@ function StructuredTextRenderer({ text }: { text: string }) {
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold mt-0.5"
                       style={{
-                        background: 'rgba(0,170,255,0.1)',
-                        color: '#00AAFF',
-                        border: '1px solid rgba(0,170,255,0.2)',
+                        background: 'rgba(168,85,247,0.1)',
+                        color: '#A855F7',
+                        border: '1px solid rgba(168,85,247,0.2)',
                       }}
                     >
                       {numberedMatch[1]}
@@ -1191,14 +1310,14 @@ function StructuredTextRenderer({ text }: { text: string }) {
                   <div key={li} className="flex gap-3 mb-2 items-start pl-1">
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0 mt-2"
-                      style={{ background: '#00AAFF', opacity: 0.6 }}
+                      style={{ background: '#A855F7', opacity: 0.6 }}
                     />
                     <span className="flex-1">
                       {parts.length > 1 ? (
                         <>
-                          <span style={{ color: '#e0f0ff' }}>{renderBoldText(parts[0])}</span>
-                          <span style={{ color: 'rgba(0,170,255,0.5)' }}> — </span>
-                          <span style={{ color: 'rgba(0,170,255,0.8)' }}>{parts.slice(1).join(' — ')}</span>
+                          <span style={{ color: '#f3e8ff' }}>{renderBoldText(parts[0])}</span>
+                          <span style={{ color: 'rgba(168,85,247,0.5)' }}> — </span>
+                          <span style={{ color: 'rgba(168,85,247,0.8)' }}>{parts.slice(1).join(' — ')}</span>
                         </>
                       ) : (
                         renderBoldText(bulletMatch[1])
@@ -1272,7 +1391,7 @@ function renderBoldText(text: string): React.ReactNode {
   if (parts.length === 1) return text;
   return parts.map((part, i) =>
     i % 2 === 1
-      ? <strong key={i} style={{ color: '#e0f0ff', fontWeight: 600 }}>{part}</strong>
+      ? <strong key={i} style={{ color: '#f3e8ff', fontWeight: 600 }}>{part}</strong>
       : <span key={i}>{part}</span>
   );
 }
@@ -1308,7 +1427,7 @@ function FormattedText({ text }: { text: string }) {
             <div key={i} style={{
               fontSize: '14px',
               fontWeight: 700,
-              color: '#00AAFF',
+              color: '#A855F7',
               marginTop: i > 0 ? '12px' : '4px',
               marginBottom: '4px',
               letterSpacing: '0.02em',
@@ -1330,8 +1449,8 @@ function FormattedText({ text }: { text: string }) {
               paddingLeft: '8px',
               lineHeight: '1.6',
             }}>
-              <span style={{ color: '#00AAFF', fontSize: '14px', marginTop: '2px', flexShrink: 0 }}>•</span>
-              <span style={{ color: '#e0f0ff' }}>{bulletMatch[1]}</span>
+              <span style={{ color: '#A855F7', fontSize: '14px', marginTop: '2px', flexShrink: 0 }}>•</span>
+              <span style={{ color: '#f3e8ff' }}>{bulletMatch[1]}</span>
             </div>
           );
         }
@@ -1353,7 +1472,7 @@ function FormattedText({ text }: { text: string }) {
               lineHeight: '1.6',
             }}>
               <span style={{
-                color: '#00AAFF',
+                color: '#A855F7',
                 fontWeight: 700,
                 fontSize: '13px',
                 minWidth: '22px',
@@ -1363,14 +1482,14 @@ function FormattedText({ text }: { text: string }) {
               }}>
                 {stepNum}.
               </span>
-              <span style={{ color: '#e0f0ff' }}>{stepText}</span>
+              <span style={{ color: '#f3e8ff' }}>{stepText}</span>
             </div>
           );
         }
 
         // ── Regular text line
         return (
-          <div key={i} style={{ lineHeight: '1.7', color: '#e0f0ff' }}>
+          <div key={i} style={{ lineHeight: '1.7', color: '#f3e8ff' }}>
             {trimmed}
           </div>
         );
@@ -1386,11 +1505,11 @@ function ShimmerBar({ width }: { width: string }) {
   return (
     <div
       className="h-3 rounded-full overflow-hidden"
-      style={{ width, background: 'rgba(0,170,255,0.04)' }}
+      style={{ width, background: 'rgba(168,85,247,0.04)' }}
     >
       <motion.div
         className="h-full w-1/2 rounded-full"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,170,255,0.08), transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.08), transparent)' }}
         animate={{ x: ['-100%', '300%'] }}
         transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
       />
@@ -1400,11 +1519,11 @@ function ShimmerBar({ width }: { width: string }) {
 
 function ShimmerBlock() {
   return (
-    <div className="w-full h-full rounded-2xl overflow-hidden" style={{ background: 'rgba(0,170,255,0.03)' }}>
+    <div className="w-full h-full rounded-2xl overflow-hidden" style={{ background: 'rgba(168,85,247,0.03)' }}>
       <motion.div
         className="w-full h-full"
         style={{
-          background: 'linear-gradient(110deg, transparent 30%, rgba(0,170,255,0.06) 50%, transparent 70%)',
+          background: 'linear-gradient(110deg, transparent 30%, rgba(168,85,247,0.06) 50%, transparent 70%)',
         }}
         animate={{ x: ['-100%', '100%'] }}
         transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}

@@ -7,7 +7,7 @@ except ImportError:
 
 # ── Mozilla.ai Otari Gateway (Primary AI Control Plane) ──────────────────────
 OTARI_API_KEY  = os.getenv("OTARI_API_KEY", os.getenv("OTARI_AI_TOKEN", os.getenv("GATEWAY_PLATFORM_TOKEN", "")))
-OTARI_BASE_URL = os.getenv("OTARI_BASE_URL", "https://api.otari.ai/api/v1")
+OTARI_BASE_URL = os.getenv("OTARI_BASE_URL", "https://otari.ai/api/v1")
 
 # ── Oxlo.ai (Secondary / Legacy Multimodal Fallback) ─────────────────────────
 OXLO_API_KEY  = os.getenv("OXLO_API_KEY", "")
@@ -28,44 +28,44 @@ STT_ENGINE_PRIORITY = ["sarvam", "groq"]
 # ── Open-Weight Models via Otari.ai (Distinct Roles for Rubric 30/30 pts) ────
 OPEN_WEIGHT_MODELS = {
     "reasoning": {
-        "id": "deepseek-r1-70b",
-        "otari_id": "deepseek/deepseek-r1-distill-llama-70b",
-        "name": "DeepSeek R1 Distill 70B",
-        "license": "MIT (Open-Weight)",
-        "role": "Deep Reasoning, Fact Verification & Structured Synthesis",
-        "cost_per_1k_tokens": 0.0008,
-    },
-    "voice_chat": {
-        "id": "qwen-3-32b",
-        "otari_id": "qwen/qwen-3-32b-instruct",
-        "name": "Qwen 3 32B Instruct",
+        "id": "qwen-3.5-35b-a3b",
+        "otari_id": "alibaba/qwen-3.5-35b-a3b",
+        "name": "Alibaba Qwen 3.5 35B-A3B",
         "license": "Apache-2.0 (Open-Weight)",
-        "role": "Low-Latency Multilingual Voice Chat & Native Indic Script Output",
+        "role": "Primary Reasoning, Fact Verification & Structured Synthesis",
         "cost_per_1k_tokens": 0.0004,
     },
+    "voice_chat": {
+        "id": "qwen3-32b",
+        "otari_id": "alibaba/qwen3-32b",
+        "name": "Alibaba Qwen 3 32B",
+        "license": "Apache-2.0 (Open-Weight)",
+        "role": "Low-Latency Multilingual Voice & Text Chat + Native Indic Script Output",
+        "cost_per_1k_tokens": 0.0003,
+    },
     "vision": {
-        "id": "llama-4-maverick-17b",
-        "otari_id": "meta-llama/llama-4-maverick-17b-128e-instruct",
-        "name": "Llama 4 Maverick 17B Vision",
-        "license": "Llama 4 Community (Open-Weight)",
+        "id": "qwen3-vl-30b-a3b",
+        "otari_id": "alibaba/qwen3-vl-30b-a3b-instruct",
+        "name": "Alibaba Qwen 3 VL 30B-A3B Vision",
+        "license": "Apache-2.0 (Open-Weight)",
         "role": "Webcam Scene Analysis, Object Identification & Creative Vision",
         "cost_per_1k_tokens": 0.0005,
     },
     "coder_tools": {
-        "id": "qwen-2.5-coder-32b",
-        "otari_id": "qwen/qwen-2.5-coder-32b-instruct",
-        "name": "Qwen 2.5 Coder 32B",
+        "id": "qwen3-coder-30b-a3b",
+        "otari_id": "alibaba/qwen3-coder-30b-a3b-instruct",
+        "name": "Alibaba Qwen 3 Coder 30B-A3B",
         "license": "Apache-2.0 (Open-Weight)",
         "role": "Code Execution, Quantitative Analysis & MCP Tool Orchestration",
-        "cost_per_1k_tokens": 0.0005,
+        "cost_per_1k_tokens": 0.0004,
     },
     "fast_fallback": {
-        "id": "ministral-14b",
-        "otari_id": "mistralai/ministral-14b-instruct",
-        "name": "Ministral 14B Instruct",
+        "id": "qwen3guard-gen-8b",
+        "otari_id": "alibaba/qwen3guard-gen-8b",
+        "name": "Alibaba Qwen 3 Guard 8B",
         "license": "Apache-2.0 (Open-Weight)",
-        "role": "High-Availability Fast Fallback & Guardrail Classifier",
-        "cost_per_1k_tokens": 0.0002,
+        "role": "High-Availability Fast Fallback & Guardrail Safety Classifier",
+        "cost_per_1k_tokens": 0.0001,
     },
 }
 

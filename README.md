@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="frontend/public/logo-header.png" alt="Otari VoxVision.ai" width="200" />
+  <img src="frontend/public/logo-header.png" alt="Aetheris AI" width="200" />
 </p>
 
-<h1 align="center">Otari-VoxVision.ai Studio</h1>
+<h1 align="center">Aetheris AI — Open-Weight Multimodal & Multi-Model Studio</h1>
 
 <p align="center">
-  <strong>Multimodal Voice, Webcam Vision & Open-Weight AI Router Workbench</strong><br/>
+  <strong>Text Prompts, Multilingual Voice, Live Webcam Vision & Open-Weight AI Router Workbench</strong><br/>
   Built for <strong>MozFest Developers Wilding: Online</strong> powered by <a href="https://otari.ai">Mozilla.ai Otari Gateway</a>
 </p>
 
@@ -21,18 +21,18 @@
 
 ## MozFest "Developers Wilding: Online" Rubric Alignment (100 / 100 Points)
 
-This branch (`mozilla-devs-wilding`) integrates **Mozilla.ai's Otari Gateway (`https://api.otari.ai/api/v1`)** as the central AI control plane across Voice Mode, Vision Mode, and the dedicated **Otari Router Studio (`/otari`)**.
+This branch (`mozilla-devs-wilding`) integrates **Mozilla.ai's Otari Gateway (`https://otari.ai/api/v1`)** as the central AI control plane across Voice & Text Mode (`/voice`), Vision Mode (`/vision`), and the dedicated **Otari AI Studio (`/otari`)**.
 
 ### 1. Open-Weight Models (30 / 30 Points)
 We meaningfully route **5 distinct open-weight models** via Otari for specialized roles:
 
 | Open-Weight Model (`otari_id`) | License | Distinct Application Role | Implementation |
 | :--- | :--- | :--- | :--- |
-| **`deepseek/deepseek-r1-distill-llama-70b`** | MIT | Deep Reasoning, Web Search Fact Verification & Structured Synthesis | `otari_gateway.py`, `chat_service.py` |
-| **`qwen/qwen-3-32b-instruct`** | Apache-2.0 | Low-Latency Multilingual Voice Chat & Native Indic Script Output (8 Languages) | `otari_gateway.py`, `chat_service.py` |
-| **`meta-llama/llama-4-maverick-17b-128e-instruct`** | Llama 4 Community | Webcam Scene Analysis, Object Identification & Creative Vision ("What If", "Biographies", "Director") | `otari_gateway.py`, `vision_service.py`, `vision_creative_service.py` |
-| **`qwen/qwen-2.5-coder-32b-instruct`** | Apache-2.0 | Sandboxed Python Code Execution, Quantitative Verification & MCP Tool Orchestration | `otari_gateway.py` (`execute_code_workflow`) |
-| **`mistralai/ministral-14b-instruct`** | Apache-2.0 | High-Availability Fast Fallback & Guardrail Classifier | `otari_gateway.py` (`routed_completion`) |
+| **`alibaba/qwen-3.5-35b-a3b`** | Apache-2.0 | Primary Reasoning, Web Search Fact Verification & Structured Synthesis | `otari_gateway.py`, `chat_service.py` |
+| **`alibaba/qwen3-32b`** | Apache-2.0 | Low-Latency Multilingual Voice & Text Chat + Native Indic Script Output (8 Languages) | `otari_gateway.py`, `chat_service.py` |
+| **`alibaba/qwen3-vl-30b-a3b-instruct`** | Apache-2.0 | Webcam Scene Analysis, Object Identification & Creative Vision ("What If", "Biographies", "Director") | `otari_gateway.py`, `vision_service.py`, `vision_creative_service.py` |
+| **`alibaba/qwen3-coder-30b-a3b-instruct`** | Apache-2.0 | Sandboxed Python Code Execution, Quantitative Verification & MCP Tool Orchestration | `otari_gateway.py` (`execute_code_workflow`) |
+| **`alibaba/qwen3guard-gen-8b`** | Apache-2.0 | High-Availability Fast Fallback & Guardrail Safety Classifier | `otari_gateway.py` (`routed_completion`) |
 
 ### 2. Otari Capabilities Demonstrated (60 / 60 Points — All 8 Capabilities Active)
 
