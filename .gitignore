@@ -1,0 +1,73 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.venv/
+dist/
+build/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDE and editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Project scratch files and draft docs
+oxlo_docs.md
+vision_mode_ideas.md
+image.png
+image copy.png
+image copy 2.png
+image copy 3.png
+
+# Test, scratch, and one-off fix scripts
+test_*.py
+scratch_*.py
+temp_*.py
+fix_*.py
+revert_*.py
+repair_*.py
+
+# Backup files
+*.bak
+
+
+# Temp HTML files
+frontend/public/temp_*.html
+
+# Ngrok
+ngrok.log
+
+# Gemini AI local data
+.gemini/
+
+# OS generated files
+.DS_Store
+Desktop.ini
+ehthumbs.db
