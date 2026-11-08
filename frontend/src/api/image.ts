@@ -1,6 +1,6 @@
 import type { ImageGenerateResult } from '../types';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) || '';
 
 /**
  * Generate an image from a text prompt via the backend.

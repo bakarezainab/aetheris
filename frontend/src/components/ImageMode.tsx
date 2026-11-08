@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -11,7 +13,7 @@ import { generateCompound, isCompoundPrompt } from '../api/compound';
 import type { Message } from '../types';
 
 type ImageSize = '1024x1024' | '1024x1792' | '1792x1024';
-type ImageModel = 'oxlo-image-pro' | 'flux.1-schnell';
+type ImageModel = 'alibaba/qwen-image' | 'alibaba/qwen-image-fast';
 
 const SIZE_LABELS: Record<ImageSize, string> = {
   '1024x1024': 'Square',
@@ -20,8 +22,8 @@ const SIZE_LABELS: Record<ImageSize, string> = {
 };
 
 const MODEL_INFO: Record<ImageModel, { label: string; icon: typeof Crown; tier: string }> = {
-  'oxlo-image-pro': { label: 'Oxlo Image Pro', icon: Crown, tier: 'Premium' },
-  'flux.1-schnell': { label: 'Flux.1 Schnell', icon: Zap, tier: 'Fast' },
+  'alibaba/qwen-image': { label: 'Otari Qwen Image', icon: Crown, tier: 'Quality' },
+  'alibaba/qwen-image-fast': { label: 'Otari Qwen Image Turbo', icon: Zap, tier: 'Turbo' },
 };
 
 const PROMPT_SUGGESTIONS = [
@@ -37,7 +39,7 @@ export default function ImageMode() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ImageModel>('oxlo-image-pro');
+  const [selectedModel, setSelectedModel] = useState<ImageModel>('alibaba/qwen-image');
   const [selectedSize, setSelectedSize] = useState<ImageSize>('1024x1024');
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showSizePicker, setShowSizePicker] = useState(false);
@@ -147,7 +149,7 @@ export default function ImageMode() {
   const handleDownload = useCallback((imageUrl: string, promptText: string) => {
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `Oxlo_VoxVision.ai-${promptText.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+    link.download = `Aetheris_OmniSense-${promptText.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -168,11 +170,11 @@ export default function ImageMode() {
   };
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden" style={{ background: '#05070D' }}>
+    <div className="h-full flex flex-col relative overflow-hidden" style={{ background: '#040B08' }}>
 
       {/* ── Subtle Background ──────────────────────────────────── */}
       <div className="absolute inset-0 z-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse at 50% 30%, rgba(0,170,255,0.03) 0%, transparent 60%)',
+        background: 'radial-gradient(ellipse at 50% 30%, rgba(0,245,155,0.03) 0%, transparent 60%)',
       }} />
 
       {/* ── Content ────────────────────────────────────────────── */}
@@ -190,17 +192,17 @@ export default function ImageMode() {
               >
                 <div className="w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(0,170,255,0.1), rgba(0,170,255,0.03))',
-                    border: '1px solid rgba(0,170,255,0.15)',
-                    boxShadow: '0 0 30px rgba(0,170,255,0.08)',
+                    background: 'linear-gradient(135deg, rgba(0,245,155,0.1), rgba(0,245,155,0.03))',
+                    border: '1px solid rgba(0,245,155,0.15)',
+                    boxShadow: '0 0 30px rgba(0,245,155,0.08)',
                   }}
                 >
-                  <ImagePlus className="w-9 h-9" style={{ color: '#00AAFF' }} />
+                  <ImagePlus className="w-9 h-9" style={{ color: '#00F59B' }} />
                 </div>
                 <h2 className="text-3xl font-bold mb-3" style={{ color: '#e0f0ff', letterSpacing: '-0.02em' }}>
                   Generate Images
                 </h2>
-                <p className="text-sm mb-8" style={{ color: 'rgba(0,170,255,0.45)' }}>
+                <p className="text-sm mb-8" style={{ color: 'rgba(0,245,155,0.45)' }}>
                   Describe anything and bring it to life
                 </p>
 
@@ -209,14 +211,14 @@ export default function ImageMode() {
                   {PROMPT_SUGGESTIONS.slice(0, 4).map((suggestion) => (
                     <motion.button
                       key={suggestion}
-                      whileHover={{ scale: 1.02, borderColor: 'rgba(0,170,255,0.3)' }}
+                      whileHover={{ scale: 1.02, borderColor: 'rgba(0,245,155,0.3)' }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleGenerate(suggestion)}
                       className="text-left px-4 py-3 rounded-2xl text-[13px] leading-snug transition-all cursor-pointer"
                       style={{
-                        background: 'rgba(0,170,255,0.03)',
-                        border: '1px solid rgba(0,170,255,0.1)',
-                        color: 'rgba(0,170,255,0.6)',
+                        background: 'rgba(0,245,155,0.03)',
+                        border: '1px solid rgba(0,245,155,0.1)',
+                        color: 'rgba(0,245,155,0.6)',
                       }}
                     >
                       <Sparkles className="w-3.5 h-3.5 inline mr-2 opacity-50" />
@@ -251,8 +253,8 @@ export default function ImageMode() {
               <div
                 className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center mt-1"
                 style={{
-                  background: 'linear-gradient(135deg, #00AAFF, #0088CC)',
-                  boxShadow: '0 0 15px rgba(0,170,255,0.4)',
+                  background: 'linear-gradient(135deg, #00F59B, #059669)',
+                  boxShadow: '0 0 15px rgba(0,245,155,0.4)',
                 }}
               >
                 <Bot className="w-4 h-4 text-white" />
@@ -260,15 +262,15 @@ export default function ImageMode() {
               <div
                 className="flex-1 px-5 py-4 rounded-3xl rounded-tl-sm"
                 style={{
-                  background: 'rgba(0,170,255,0.04)',
+                  background: 'rgba(0,245,155,0.04)',
                   backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(0,170,255,0.1)',
+                  border: '1px solid rgba(0,245,155,0.1)',
                 }}
               >
                 {/* Shimmer Loading */}
                 <div className="flex items-center gap-3 mb-3">
-                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#00AAFF' }} />
-                  <span className="text-sm font-medium" style={{ color: 'rgba(0,170,255,0.7)' }}>
+                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#00F59B' }} />
+                  <span className="text-sm font-medium" style={{ color: 'rgba(0,245,155,0.7)' }}>
                     Generating your image...
                   </span>
                 </div>
@@ -292,8 +294,8 @@ export default function ImageMode() {
           style={{
             background: 'rgba(5, 7, 13, 0.8)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(0,170,255,0.12)',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(0,170,255,0.06)',
+            border: '1px solid rgba(0,245,155,0.12)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(0,245,155,0.06)',
           }}
         >
           {/* Model + Size selectors */}
@@ -304,9 +306,9 @@ export default function ImageMode() {
                 onClick={() => { setShowModelPicker(p => !p); setShowSizePicker(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase transition-all cursor-pointer"
                 style={{
-                  background: 'rgba(0,170,255,0.05)',
-                  border: '1px solid rgba(0,170,255,0.12)',
-                  color: 'rgba(0,170,255,0.5)',
+                  background: 'rgba(0,245,155,0.05)',
+                  border: '1px solid rgba(0,245,155,0.12)',
+                  color: 'rgba(0,245,155,0.5)',
                   letterSpacing: '0.03em',
                 }}
               >
@@ -324,7 +326,7 @@ export default function ImageMode() {
                     style={{
                       background: 'rgba(10, 15, 25, 0.95)',
                       backdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(0,170,255,0.15)',
+                      border: '1px solid rgba(0,245,155,0.15)',
                       minWidth: '200px',
                     }}
                   >
@@ -334,9 +336,9 @@ export default function ImageMode() {
                         onClick={() => { setSelectedModel(id); setShowModelPicker(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer"
                         style={{
-                          background: selectedModel === id ? 'rgba(0,170,255,0.08)' : 'transparent',
-                          color: selectedModel === id ? '#00AAFF' : 'rgba(0,170,255,0.5)',
-                          borderBottom: '1px solid rgba(0,170,255,0.06)',
+                          background: selectedModel === id ? 'rgba(0,245,155,0.08)' : 'transparent',
+                          color: selectedModel === id ? '#00F59B' : 'rgba(0,245,155,0.5)',
+                          borderBottom: '1px solid rgba(0,245,155,0.06)',
                         }}
                       >
                         <info.icon className="w-4 h-4" />
@@ -357,9 +359,9 @@ export default function ImageMode() {
                 onClick={() => { setShowSizePicker(p => !p); setShowModelPicker(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase transition-all cursor-pointer"
                 style={{
-                  background: 'rgba(0,170,255,0.05)',
-                  border: '1px solid rgba(0,170,255,0.12)',
-                  color: 'rgba(0,170,255,0.5)',
+                  background: 'rgba(0,245,155,0.05)',
+                  border: '1px solid rgba(0,245,155,0.12)',
+                  color: 'rgba(0,245,155,0.5)',
                   letterSpacing: '0.03em',
                 }}
               >
@@ -376,7 +378,7 @@ export default function ImageMode() {
                     style={{
                       background: 'rgba(10, 15, 25, 0.95)',
                       backdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(0,170,255,0.15)',
+                      border: '1px solid rgba(0,245,155,0.15)',
                       minWidth: '160px',
                     }}
                   >
@@ -386,9 +388,9 @@ export default function ImageMode() {
                         onClick={() => { setSelectedSize(size); setShowSizePicker(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer"
                         style={{
-                          background: selectedSize === size ? 'rgba(0,170,255,0.08)' : 'transparent',
-                          color: selectedSize === size ? '#00AAFF' : 'rgba(0,170,255,0.5)',
-                          borderBottom: '1px solid rgba(0,170,255,0.06)',
+                          background: selectedSize === size ? 'rgba(0,245,155,0.08)' : 'transparent',
+                          color: selectedSize === size ? '#00F59B' : 'rgba(0,245,155,0.5)',
+                          borderBottom: '1px solid rgba(0,245,155,0.06)',
                         }}
                       >
                         <span className="text-sm font-medium">{label}</span>
@@ -411,7 +413,7 @@ export default function ImageMode() {
               placeholder="Describe the image you want to create..."
               rows={1}
               disabled={isGenerating}
-              className="flex-1 resize-none bg-transparent outline-none text-[15px] leading-relaxed py-2.5 px-2 placeholder:text-[rgba(0,170,255,0.25)] disabled:opacity-40"
+              className="flex-1 resize-none bg-transparent outline-none text-[15px] leading-relaxed py-2.5 px-2 placeholder:text-[rgba(0,245,155,0.25)] disabled:opacity-40"
               style={{ color: '#e0f0ff', maxHeight: '120px' }}
             />
             <motion.button
@@ -422,15 +424,15 @@ export default function ImageMode() {
               className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 mb-0.5"
               style={{
                 background: prompt.trim() && !isGenerating
-                  ? 'linear-gradient(135deg, #00AAFF, #0088CC)'
-                  : 'rgba(0,170,255,0.06)',
+                  ? 'linear-gradient(135deg, #00F59B, #059669)'
+                  : 'rgba(0,245,155,0.06)',
                 boxShadow: prompt.trim() && !isGenerating
-                  ? '0 0 20px rgba(0,170,255,0.3)'
+                  ? '0 0 20px rgba(0,245,155,0.3)'
                   : 'none',
               }}
             >
               {isGenerating ? (
-                <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(0,170,255,0.5)' }} />
+                <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(0,245,155,0.5)' }} />
               ) : (
                 <Send className="w-5 h-5 text-white" />
               )}
@@ -462,15 +464,15 @@ export default function ImageMode() {
                 src={lightboxImage}
                 alt="Generated image fullscreen"
                 className="rounded-2xl shadow-2xl max-w-full max-h-[85vh] object-contain"
-                style={{ border: '1px solid rgba(0,170,255,0.2)' }}
+                style={{ border: '1px solid rgba(0,245,155,0.2)' }}
               />
               <button
                 onClick={() => setLightboxImage(null)}
                 className="absolute -top-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
                 style={{
                   background: 'rgba(5,7,13,0.9)',
-                  border: '1px solid rgba(0,170,255,0.2)',
-                  color: '#00AAFF',
+                  border: '1px solid rgba(0,245,155,0.2)',
+                  color: '#00F59B',
                 }}
               >
                 <X className="w-5 h-5" />
@@ -511,14 +513,14 @@ function ImageMessageBubble({
         className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center mt-1"
         style={{
           background: isUser
-            ? 'rgba(0, 170, 255, 0.06)'
-            : 'linear-gradient(135deg, #00AAFF, #0088CC)',
-          border: isUser ? '1px solid rgba(0, 170, 255, 0.15)' : 'none',
-          boxShadow: isUser ? 'none' : '0 0 15px rgba(0,170,255,0.3)',
+            ? 'rgba(0, 245, 155, 0.06)'
+            : 'linear-gradient(135deg, #00F59B, #059669)',
+          border: isUser ? '1px solid rgba(0, 245, 155, 0.15)' : 'none',
+          boxShadow: isUser ? 'none' : '0 0 15px rgba(0,245,155,0.3)',
         }}
       >
         {isUser
-          ? <User className="w-4 h-4" style={{ color: 'rgba(0, 170, 255, 0.6)' }} />
+          ? <User className="w-4 h-4" style={{ color: 'rgba(0, 245, 155, 0.6)' }} />
           : <Bot className="w-5 h-5 text-white" />}
       </div>
 
@@ -532,9 +534,9 @@ function ImageMessageBubble({
               isUser ? 'rounded-3xl rounded-tr-sm' : 'rounded-3xl rounded-tl-sm'
             }`}
             style={{
-              background: isUser ? 'rgba(0, 170, 255, 0.04)' : 'rgba(0, 170, 255, 0.06)',
+              background: isUser ? 'rgba(0, 245, 155, 0.04)' : 'rgba(0, 245, 155, 0.06)',
               backdropFilter: 'blur(20px)',
-              border: `1px solid rgba(0, 170, 255, ${isUser ? '0.08' : '0.15'})`,
+              border: `1px solid rgba(0, 245, 155, ${isUser ? '0.08' : '0.15'})`,
               color: '#e0f0ff',
             }}
           >
@@ -553,8 +555,8 @@ function ImageMessageBubble({
             <div
               className="rounded-2xl overflow-hidden inline-block cursor-pointer"
               style={{
-                border: '1px solid rgba(0,170,255,0.15)',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 20px rgba(0,170,255,0.06)',
+                border: '1px solid rgba(0,245,155,0.15)',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 20px rgba(0,245,155,0.06)',
                 maxWidth: '400px',
               }}
               onClick={() => onImageClick(message.imageUrl!)}
@@ -582,9 +584,9 @@ function ImageMessageBubble({
                 onClick={() => onDownload(message.imageUrl!, message.content)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium cursor-pointer"
                 style={{
-                  background: 'rgba(0,170,255,0.05)',
-                  border: '1px solid rgba(0,170,255,0.12)',
-                  color: 'rgba(0,170,255,0.6)',
+                  background: 'rgba(0,245,155,0.05)',
+                  border: '1px solid rgba(0,245,155,0.12)',
+                  color: 'rgba(0,245,155,0.6)',
                 }}
               >
                 <Download className="w-3 h-3" />
@@ -601,9 +603,9 @@ function ImageMessageBubble({
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium cursor-pointer"
                 style={{
-                  background: 'rgba(0,170,255,0.05)',
-                  border: '1px solid rgba(0,170,255,0.12)',
-                  color: 'rgba(0,170,255,0.6)',
+                  background: 'rgba(0,245,155,0.05)',
+                  border: '1px solid rgba(0,245,155,0.12)',
+                  color: 'rgba(0,245,155,0.6)',
                 }}
               >
                 <RefreshCw className="w-3 h-3" />
@@ -612,9 +614,9 @@ function ImageMessageBubble({
               {message.metadata?.model_used && (
                 <span className="text-[10px] font-medium uppercase px-2 py-1 rounded-full"
                   style={{
-                    color: 'rgba(0,170,255,0.3)',
-                    background: 'rgba(0,170,255,0.03)',
-                    border: '1px solid rgba(0,170,255,0.06)',
+                    color: 'rgba(0,245,155,0.3)',
+                    background: 'rgba(0,245,155,0.03)',
+                    border: '1px solid rgba(0,245,155,0.06)',
                     letterSpacing: '0.03em',
                   }}
                 >
@@ -642,9 +644,9 @@ function StructuredTextRendererImage({ text }: { text: string }) {
       transition={{ delay: 0.2 }}
       className="rounded-3xl rounded-tl-sm overflow-hidden shadow-xl"
       style={{
-        background: 'rgba(0, 170, 255, 0.03)',
+        background: 'rgba(0, 245, 155, 0.03)',
         backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(0, 170, 255, 0.12)',
+        border: '1px solid rgba(0, 245, 155, 0.12)',
       }}
     >
       {sections.map((section, i) => (
@@ -652,13 +654,13 @@ function StructuredTextRendererImage({ text }: { text: string }) {
           key={i}
           className="px-6 py-4"
           style={{
-            borderBottom: i < sections.length - 1 ? '1px solid rgba(0,170,255,0.06)' : 'none',
+            borderBottom: i < sections.length - 1 ? '1px solid rgba(0,245,155,0.06)' : 'none',
           }}
         >
           {section.header && (
             <div className="flex items-center gap-2.5 mb-3">
               <span className="text-lg">{section.emoji}</span>
-              <h3 className="text-[15px] font-bold" style={{ color: '#00AAFF' }}>
+              <h3 className="text-[15px] font-bold" style={{ color: '#00F59B' }}>
                 {section.header}
               </h3>
             </div>
@@ -672,9 +674,9 @@ function StructuredTextRendererImage({ text }: { text: string }) {
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold mt-0.5"
                       style={{
-                        background: 'rgba(0,170,255,0.1)',
-                        color: '#00AAFF',
-                        border: '1px solid rgba(0,170,255,0.2)',
+                        background: 'rgba(0,245,155,0.1)',
+                        color: '#00F59B',
+                        border: '1px solid rgba(0,245,155,0.2)',
                       }}
                     >
                       {numberedMatch[1]}
@@ -691,14 +693,14 @@ function StructuredTextRendererImage({ text }: { text: string }) {
                   <div key={li} className="flex gap-3 mb-2 items-start pl-1">
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0 mt-2"
-                      style={{ background: '#00AAFF', opacity: 0.6 }}
+                      style={{ background: '#00F59B', opacity: 0.6 }}
                     />
                     <span className="flex-1">
                       {parts.length > 1 ? (
                         <>
                           <span style={{ color: '#e0f0ff' }}>{renderBoldTextImage(parts[0])}</span>
-                          <span style={{ color: 'rgba(0,170,255,0.5)' }}> — </span>
-                          <span style={{ color: 'rgba(0,170,255,0.8)' }}>{parts.slice(1).join(' — ')}</span>
+                          <span style={{ color: 'rgba(0,245,155,0.5)' }}> — </span>
+                          <span style={{ color: 'rgba(0,245,155,0.8)' }}>{parts.slice(1).join(' — ')}</span>
                         </>
                       ) : (
                         renderBoldTextImage(bulletMatch[1])
@@ -770,11 +772,11 @@ function ShimmerBar({ width }: { width: string }) {
   return (
     <div
       className="h-3 rounded-full overflow-hidden"
-      style={{ width, background: 'rgba(0,170,255,0.04)' }}
+      style={{ width, background: 'rgba(0,245,155,0.04)' }}
     >
       <motion.div
         className="h-full w-1/2 rounded-full"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,170,255,0.08), transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,245,155,0.08), transparent)' }}
         animate={{ x: ['-100%', '300%'] }}
         transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
       />
@@ -784,11 +786,11 @@ function ShimmerBar({ width }: { width: string }) {
 
 function ShimmerBlock() {
   return (
-    <div className="w-full h-full rounded-2xl overflow-hidden" style={{ background: 'rgba(0,170,255,0.03)' }}>
+    <div className="w-full h-full rounded-2xl overflow-hidden" style={{ background: 'rgba(0,245,155,0.03)' }}>
       <motion.div
         className="w-full h-full"
         style={{
-          background: 'linear-gradient(110deg, transparent 30%, rgba(0,170,255,0.06) 50%, transparent 70%)',
+          background: 'linear-gradient(110deg, transparent 30%, rgba(0,245,155,0.06) 50%, transparent 70%)',
         }}
         animate={{ x: ['-100%', '100%'] }}
         transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
