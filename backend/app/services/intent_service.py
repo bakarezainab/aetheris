@@ -1,10 +1,10 @@
 import re
 import logging
 from typing import Optional
-from app.services.oxlo_client import oxlo
+from app.services.otari_client import otari
 from app.config import MODELS
 
-logger = logging.getLogger("Oxlo VoxVision.ai.intent")
+logger = logging.getLogger("Aetheris.OmniSense.intent")
 
 # ── Fast regex-based intent detection (no LLM call needed) ────────────────────
 _question_patterns = [
@@ -127,7 +127,7 @@ async def detect_intent_llm(text: str) -> dict:
     Returns: { "intent": str, "confidence": float, "method": "llm" }
     """
     try:
-        response = await oxlo.chat.completions.create(
+        response = await otari.chat.completions.create(
             model=MODELS["chat"],
             messages=[
                 {
