@@ -84,7 +84,7 @@ class TranscribeResponse(BaseModel):
 class ImageGenerateRequest(BaseModel):
     """Request to generate an image from a text prompt."""
     prompt: str
-    model: Optional[str] = None    # "oxlo-image-pro" | "flux.1-schnell"
+    model: Optional[str] = None    # "alibaba/qwen-image"
     size: Optional[str] = None     # "1024x1024" | "1024x1792" | "1792x1024"
 
 
@@ -160,7 +160,7 @@ class CompoundRequest(BaseModel):
     """Request for compound multi-intent (image + structured text)."""
     prompt: str                    # Full user prompt
     history: List[ChatMessage] = []
-    image_model: Optional[str] = None    # "oxlo-image-pro" | "flux.1-schnell"
+    image_model: Optional[str] = None    # "alibaba/qwen-image"
     image_size: Optional[str] = None     # "1024x1024" | etc.
 
 
