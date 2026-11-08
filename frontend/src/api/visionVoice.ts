@@ -8,7 +8,7 @@
 
 import type { DetectionBox } from '../types';
 
-const BASE = import.meta.env.VITE_API_URL || '';
+const BASE = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) || '';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

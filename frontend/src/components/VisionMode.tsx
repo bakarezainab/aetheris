@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -55,20 +57,20 @@ const LANGUAGES = [
 // Glass card style constants — redesigned to match Orbital Command aesthetic
 // ═══════════════════════════════════════════════════════════════════════════════
 const GLASS = {
-  bg: 'rgba(8, 12, 24, 0.85)',
-  bgDeep: 'rgba(5, 8, 18, 0.92)',
+  bg: 'rgba(4, 11, 8, 0.88)',
+  bgDeep: 'rgba(3, 8, 6, 0.95)',
   border: 'rgba(255, 255, 255, 0.05)',
   borderAccent: 'rgba(255, 255, 255, 0.10)',
-  borderGlow: 'rgba(168, 85, 247, 0.15)',
+  borderGlow: 'rgba(0, 245, 155, 0.20)',
   cardBg: 'rgba(255, 255, 255, 0.02)',
-  cardBgAccent: 'rgba(168, 85, 247, 0.04)',
-  text: '#e1e1f0',
-  textMuted: 'rgba(190, 199, 211, 0.7)',
-  textDim: 'rgba(190, 199, 211, 0.4)',
-  accent: '#d8b4fe',
-  accentBright: '#A855F7',
-  secondary: '#f472b6',
-  secondaryDim: 'rgba(244, 114, 182, 0.15)',
+  cardBgAccent: 'rgba(0, 245, 155, 0.05)',
+  text: '#ECFDF5',
+  textMuted: 'rgba(167, 243, 208, 0.7)',
+  textDim: 'rgba(167, 243, 208, 0.4)',
+  accent: '#6EE7B7',
+  accentBright: '#00F59B',
+  secondary: '#A3E635',
+  secondaryDim: 'rgba(163, 230, 53, 0.15)',
 };
 
 export default function VisionMode() {
@@ -403,7 +405,7 @@ export default function VisionMode() {
   const handleDownload = useCallback((imageB64: string, name: string) => {
     const link = document.createElement('a');
     link.href = `data:image/png;base64,${imageB64}`;
-    link.download = `Otari_VoxVision-${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}.png`;
+    link.download = `Aetheris_OmniSense-${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -507,7 +509,7 @@ export default function VisionMode() {
 
             <motion.button onClick={toggleCamera} disabled={isStarting} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               className="mt-6 pointer-events-auto flex items-center gap-3 px-7 py-3.5 rounded-full cursor-pointer disabled:opacity-80"
-              style={{ background: isStarting ? GLASS.bg : 'linear-gradient(135deg,#A855F7,#7E22CE)', border: isStarting ? `1px solid ${GLASS.border}` : 'none', boxShadow: isStarting ? 'none' : '0 8px 25px rgba(168,85,247,0.35)' }}
+              style={{ background: isStarting ? GLASS.bg : 'linear-gradient(135deg,#00F59B,#059669)', border: isStarting ? `1px solid ${GLASS.border}` : 'none', boxShadow: isStarting ? 'none' : '0 8px 25px rgba(0,245,155,0.35)', color: '#040B08' }}
             >
               {isStarting ? <><Loader2 className="w-4 h-4 animate-spin" style={{ color: GLASS.accent }} /><span className="text-sm font-bold uppercase" style={{ color: GLASS.accent }}>Initializing...</span></>
                 : <><Camera className="w-4 h-4 text-white" /><span className="text-sm font-bold text-white uppercase">Open Camera</span></>}
@@ -676,10 +678,8 @@ export default function VisionMode() {
                 {/* Gradient background */}
                 <div className="absolute inset-0 rounded-full transition-all duration-500"
                   style={{
-                    background: active
-                      ? 'linear-gradient(135deg, #A855F7, #7E22CE)'
-                      : 'linear-gradient(135deg, #A855F7, #7E22CE)',
-                    boxShadow: '0 4px 20px rgba(168,85,247,0.3)',
+                    background: 'linear-gradient(135deg, #00F59B, #059669)',
+                    boxShadow: '0 4px 20px rgba(0,245,155,0.3)',
                   }}
                 />
                 {/* Icon */}
@@ -831,11 +831,12 @@ export default function VisionMode() {
                             }`}
                             style={{
                               background: msg.role === 'user'
-                                ? 'linear-gradient(135deg, rgba(168,85,247,0.6), rgba(216,180,254,0.4))'
+                                ? 'linear-gradient(135deg, rgba(0,245,155,0.7), rgba(5,150,105,0.5))'
                                 : GLASS.bg,
                               backdropFilter: msg.role === 'assistant' ? 'blur(20px)' : undefined,
-                              border: `1px solid ${GLASS.borderAccent}`,
-                              color: msg.role === 'user' ? '#003c5d' : GLASS.text,
+                              border: `1px solid ${msg.role === 'user' ? 'rgba(0,245,155,0.4)' : GLASS.borderAccent}`,
+                              color: msg.role === 'user' ? '#040B08' : GLASS.text,
+                              fontWeight: msg.role === 'user' ? 600 : 400,
                             }}
                           >
                             {/* Vision badge */}
@@ -851,7 +852,7 @@ export default function VisionMode() {
 
                           {/* Timestamp */}
                           <span className="text-[9px] uppercase mt-2 mx-1" style={{ color: GLASS.textDim, letterSpacing: '-0.02em' }}>
-                            {msg.role === 'user' ? 'You' : 'VoxVision AI'} • {formatTimestamp(msg.timestamp)}
+                            {msg.role === 'user' ? 'You' : 'Aetheris OmniSense'} • {formatTimestamp(msg.timestamp)}
                           </span>
 
                           {/* ── Generated Image Render Container ── */}
@@ -883,7 +884,7 @@ export default function VisionMode() {
                                   {/* Model badge overlay */}
                                   {msg.imageModelUsed && (
                                     <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[8px] font-black uppercase shadow-md"
-                                      style={{ background: 'linear-gradient(135deg,#A855F7,#7E22CE)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', letterSpacing: '0.03em' }}
+                                      style={{ background: 'linear-gradient(135deg,#00F59B,#059669)', color: '#040B08', border: '1px solid rgba(255,255,255,0.2)', letterSpacing: '0.03em' }}
                                     >
                                       {msg.imageModelUsed}
                                     </div>
@@ -966,9 +967,9 @@ export default function VisionMode() {
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleWhatIf()} disabled={!whatIfPrompt.trim()}
                           className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-30"
-                          style={{ background: whatIfPrompt.trim() ? 'linear-gradient(135deg,#A855F7,#7E22CE)' : GLASS.cardBg }}
+                          style={{ background: whatIfPrompt.trim() ? 'linear-gradient(135deg,#00F59B,#059669)' : GLASS.cardBg }}
                         >
-                          <Send className="w-3 h-3 text-white" />
+                          <Send className="w-3 h-3 text-[#040B08]" />
                         </motion.button>
                       </div>
                     </SectionCard>
@@ -1122,11 +1123,11 @@ export default function VisionMode() {
                     onClick={() => runAnalysis()} disabled={phase !== 'idle' || !voiceQuery.trim()}
                     className="w-11 h-11 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-30"
                     style={{
-                      background: voiceQuery.trim() ? 'linear-gradient(135deg,#A855F7,#7E22CE)' : 'rgba(216,180,254,0.05)',
-                      boxShadow: voiceQuery.trim() ? '0 0 15px rgba(168,85,247,0.3)' : 'none',
+                      background: voiceQuery.trim() ? 'linear-gradient(135deg,#00F59B,#059669)' : 'rgba(0,245,155,0.05)',
+                      boxShadow: voiceQuery.trim() ? '0 0 15px rgba(0,245,155,0.3)' : 'none',
                     }}
                   >
-                    <Send className="w-4.5 h-4.5 text-white" />
+                    <Send className="w-4.5 h-4.5 text-[#040B08]" />
                   </motion.button>
                 </div>
               </div>
