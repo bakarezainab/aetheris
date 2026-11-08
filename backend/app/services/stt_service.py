@@ -1,84 +1,218 @@
 """
-stt_service.py — STT Orchestrator  (v3)
-─────────────────────────────────────────
-Implements the full quality pipeline:
+stt_service.py — Multi-Engine Speech-to-Text for Aetheris OmniSense
 
-  Mic Input
-  → Sarvam Saaras v3  (PRIMARY — "verbatim" mode for Indic)
-      • Auto language-detection when hint is None
-      • Short-transcript validation → re-try with "transcribe" mode
-      • Low confidence → skip to fallback
-  → Groq Whisper Large v3 Turbo  (FALLBACK — ultra-fast, broad multilingual)
-  → Post-STT validation:
-      • Transcript length check
-      • Intent-keyword guard
-      • Gibberish/noise rejection
-  → Language reconciliation (STT-detected lang + script detection)
-
-Return format:
-  {
-      "text":          str,    # preserved full transcript
-      "confidence":    float,  # 0.0–1.0
-      "duration_hint": float,
-      "language":      str,    # ISO-639-1 (reconciled — authoritative)
-      "stt_detected_language": str,  # raw STT engine guess (for debugging)
-      "engine":        str,    # "sarvam" | "groq"
-      "stt_mode":      str,    # sarvam mode used
-  }
+Engine priority (configurable in config.STT_ENGINE_PRIORITY):
+  1. Sarvam AI  — Saaras v3 (primary, Indian-language optimised, 22 languages)
+  2. Groq       — whisper-large-v3-turbo (fast fallback)
+  3. Otari      — whisper-large-v3 via Mozilla.ai Otari Gateway
 """
 
+import io
+import math
 import logging
-from app.config import STT_ENGINE_PRIORITY, SARVAM_API_KEY
+import httpx
+from app.services.otari_client import otari, groq
+from app.config import (
+    MODELS, STT_LANGUAGE, SUPPORTED_LANGUAGES,
+    SARVAM_API_KEY, SARVAM_BASE_URL, STT_ENGINE_PRIORITY,
+)
 
-logger = logging.getLogger("Oxlo VoxVision.ai.stt")
+logger = logging.getLogger("Aetheris.OmniSense.stt")
 
-# ── Thresholds ────────────────────────────────────────────────────────────────
-# Minimum number of characters we expect for a valid full-sentence transcript.
-# Kannada/Tamil syllabic scripts pack a lot into few chars → use a low floor.
-MIN_TRANSCRIPT_CHARS = 8
+_SARVAM_TO_ISO: dict[str, str] = {
+    "en-IN": "en", "hi-IN": "hi", "kn-IN": "kn", "ta-IN": "ta", "te-IN": "te",
+    "ml-IN": "ml", "mr-IN": "mr", "bn-IN": "bn", "gu-IN": "gu", "pa-IN": "pa",
+    "od-IN": "or", "ur-IN": "ur",
+    "en": "en", "hi": "hi", "kn": "kn", "ta": "ta", "te": "te",
+}
 
-# Minimum confidence to accept a Sarvam result directly.
-# Below this we try Whisper and then pick the longer/more-confident result.
-MIN_SARVAM_CONFIDENCE = 0.30
+_ISO_TO_SARVAM: dict[str, str] = {
+    code: info["sarvam_code"]
+    for code, info in SUPPORTED_LANGUAGES.items()
+    if info.get("sarvam_code")
+}
 
-# Indic language codes that benefit from "verbatim" STT mode
-# (verbatim = exact word-for-word, preserves "in detail" / ವಿವರವಾಗಿ etc.)
-INDIC_LANGS = {"hi", "kn", "ta", "te", "ml", "bn", "mr", "gu", "pa", "or"}
-
-# Intent-critical keywords in Indic scripts that MUST be preserved.
-# If Sarvam misses ALL of these but Whisper has them, prefer Whisper text.
-INTENT_KEYWORDS = [
-    # Kannada
-    "ವಿವರ", "ವಿವರವಾಗಿ", "ಹಂತ", "ಹಂತ-ಹಂತ",
-    # Tamil
-    "விவரம்", "படிப்படியாக", "விளக்கம்",
-    # Telugu
-    "వివరంగా", "దశలవారీగా", "వివరణ",
-    # Hindi
-    "विस्तार", "विस्तार से", "चरण",
-    # English (spoken in mixed inputs)
-    "detail", "explain", "step", "steps",
-]
-
-
-def _has_intent_keywords(text: str) -> bool:
-    """Return True if any intent-critical keyword appears in the transcript."""
-    lower = text.lower()
-    return any(kw.lower() in lower for kw in INTENT_KEYWORDS)
+_WHISPER_LANG_TO_ISO: dict[str, str] = {
+    "english": "en", "en": "en",
+    "hindi": "hi",   "hi": "hi",
+    "kannada": "kn", "kn": "kn",
+    "tamil": "ta",   "ta": "ta",
+    "telugu": "te",  "te": "te",
+    "spanish": "es", "es": "es",
+    "french": "fr",  "fr": "fr",
+    "japanese": "ja", "ja": "ja",
+    "urdu": "hi",    "ur": "hi",
+}
 
 
-def _basic_transcript_ok(text: str) -> bool:
-    """
-    Quick sanity check on raw STT output BEFORE full pipeline validation.
-    Returns False for obviously broken transcripts.
-    """
-    stripped = text.strip() if text else ""
-    if not stripped:
-        return False
-    # Pure punctuation / noise
-    if all(c in ' .,!?;:-_\'"()[]{}' for c in stripped):
-        return False
-    return True
+def _normalise_whisper_lang(raw_lang: str | None) -> str:
+    if not raw_lang:
+        return "en"
+    key = raw_lang.strip().lower()
+    if key in _WHISPER_LANG_TO_ISO:
+        return _WHISPER_LANG_TO_ISO[key]
+    if len(key) == 2 and key in SUPPORTED_LANGUAGES:
+        return key
+    return "en"
+
+
+def _ext_from_mime(mime_type: str) -> str:
+    clean_mime = mime_type.split(";")[0].strip().lower()
+    ext_map = {
+        "audio/webm": "webm", "audio/wav": "wav", "audio/wave": "wav",
+        "audio/x-wav": "wav", "audio/mp4": "mp4", "audio/mpeg": "mp3",
+        "audio/mp3": "mp3", "audio/ogg": "ogg", "audio/flac": "flac",
+    }
+    return ext_map.get(clean_mime, "webm")
+
+
+def _compute_whisper_confidence(result) -> float:
+    segments = getattr(result, "segments", None)
+    if not segments:
+        text = getattr(result, "text", "") or ""
+        return 0.75 if len(text.strip()) > 3 else 0.3
+
+    logprobs, no_speech_probs = [], []
+    for seg in segments:
+        avg_lp = getattr(seg, "avg_logprob", None)
+        nsp = getattr(seg, "no_speech_prob", None)
+        if avg_lp is None and isinstance(seg, dict):
+            avg_lp = seg.get("avg_logprob")
+            nsp = seg.get("no_speech_prob")
+        if avg_lp is not None:
+            logprobs.append(avg_lp)
+        if nsp is not None:
+            no_speech_probs.append(nsp)
+
+    if not logprobs:
+        return 0.75
+
+    mean_lp = sum(logprobs) / len(logprobs)
+    prob = math.exp(max(mean_lp, -5.0))
+    if no_speech_probs:
+        mean_nsp = sum(no_speech_probs) / len(no_speech_probs)
+        if mean_nsp > 0.6:
+            prob *= (1.0 - mean_nsp)
+
+    return round(min(max(prob, 0.0), 1.0), 3)
+
+
+async def _transcribe_sarvam(
+    audio_bytes: bytes,
+    mime_type: str = "audio/webm",
+    language: str | None = None,
+) -> dict:
+    if not SARVAM_API_KEY:
+        raise RuntimeError("SARVAM_API_KEY not configured")
+
+    clean_mime = mime_type.split(";")[0].strip().lower()
+    ext = _ext_from_mime(mime_type)
+    filename = f"audio.{ext}"
+
+    sarvam_lang = "unknown"
+    if language and language in _ISO_TO_SARVAM:
+        sarvam_lang = _ISO_TO_SARVAM[language]
+
+    url = f"{SARVAM_BASE_URL}/speech-to-text"
+    headers = {"api-subscription-key": SARVAM_API_KEY}
+    files = {"file": (filename, audio_bytes, clean_mime)}
+    data = {
+        "model": MODELS["stt"],
+        "mode": "transcribe",
+        "language_code": sarvam_lang,
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(url, headers=headers, files=files, data=data)
+
+    if response.status_code != 200:
+        raise RuntimeError(f"Sarvam STT failed (HTTP {response.status_code}): {response.text[:300]}")
+
+    res_json = response.json()
+    transcript = (res_json.get("transcript") or "").strip()
+    detected_bcp47 = res_json.get("language_code") or "en-IN"
+    detected_iso = _SARVAM_TO_ISO.get(detected_bcp47, language or "en")
+    confidence = 0.90 if len(transcript) > 2 else (0.40 if transcript else 0.10)
+
+    return {
+        "text": transcript,
+        "confidence": confidence,
+        "language": detected_iso,
+        "stt_detected_language": detected_iso,
+        "engine": "sarvam",
+        "stt_mode": "transcribe",
+    }
+
+
+async def _transcribe_whisper(
+    audio_bytes: bytes,
+    mime_type: str = "audio/webm",
+    language: str | None = None,
+) -> dict:
+    ext = _ext_from_mime(mime_type)
+    clean_mime = mime_type.split(";")[0].strip().lower()
+
+    lang_param = None
+    if language and language in SUPPORTED_LANGUAGES:
+        lang_param = SUPPORTED_LANGUAGES[language]["stt_code"]
+    elif STT_LANGUAGE:
+        lang_param = STT_LANGUAGE
+
+    # 1. Groq Whisper (fast)
+    try:
+        audio_file = io.BytesIO(audio_bytes)
+        audio_file.name = f"audio.{ext}"
+        kwargs: dict = {
+            "model": MODELS["stt_groq"],
+            "file": (f"audio.{ext}", audio_file, clean_mime),
+            "response_format": "verbose_json",
+        }
+        if lang_param:
+            kwargs["language"] = lang_param
+
+        result = await groq.audio.transcriptions.create(**kwargs)
+        text = result.text.strip()
+        confidence = _compute_whisper_confidence(result)
+        raw_whisper_lang = getattr(result, "language", None)
+        whisper_iso = _normalise_whisper_lang(raw_whisper_lang)
+        effective_lang = lang_param or whisper_iso
+
+        return {
+            "text": text,
+            "confidence": confidence,
+            "language": effective_lang,
+            "stt_detected_language": whisper_iso,
+            "engine": "groq",
+            "stt_mode": "transcribe",
+        }
+    except Exception as groq_err:
+        logger.warning("Groq Whisper skipped: %s — trying Otari Whisper", groq_err)
+
+    # 2. Otari Whisper
+    audio_file = io.BytesIO(audio_bytes)
+    audio_file.name = f"audio.{ext}"
+    kwargs = {
+        "model": MODELS["stt_otari"],
+        "file": (f"audio.{ext}", audio_file, clean_mime),
+    }
+    if lang_param:
+        kwargs["language"] = lang_param
+
+    result = await otari.audio.transcriptions.create(**kwargs)
+    text = result.text.strip()
+    confidence = 0.75 if len(text) > 3 else 0.3
+    raw_otari_lang = getattr(result, "language", None)
+    otari_iso = _normalise_whisper_lang(raw_otari_lang)
+    effective_lang = lang_param or otari_iso
+
+    return {
+        "text": text,
+        "confidence": confidence,
+        "language": effective_lang,
+        "stt_detected_language": otari_iso,
+        "engine": "otari",
+        "stt_mode": "transcribe",
+    }
 
 
 async def transcribe(
@@ -87,174 +221,19 @@ async def transcribe(
     language: str | None = None,
 ) -> dict:
     """
-    Transcribe with quality-aware fallback pipeline.
-
-    Pipeline:
-      1. Sarvam "verbatim" mode (preserves all words, ideal for Indic)
-      2. If result is too short → re-try Sarvam with "transcribe" mode
-      3. If confidence still low → run Groq Whisper in parallel
-      4. Pick the better result (longer + has intent keywords)
-      5. If Sarvam fails entirely → Groq Whisper result
-      6. Reconcile language: STT engine guess vs text script analysis
+    Transcribe audio bytes using the configured engine priority.
     """
-    errors: list[str] = []
-    sarvam_result: dict | None = None
-    groq_result: dict | None = None
-
-    # ── STEP 1: Sarvam primary ─────────────────────────────────────────────────
+    last_error = None
     for engine in STT_ENGINE_PRIORITY:
+        try:
+            if engine == "sarvam":
+                if language and language not in _ISO_TO_SARVAM:
+                    continue
+                return await _transcribe_sarvam(audio_bytes, mime_type, language)
+            elif engine in ("groq", "otari"):
+                return await _transcribe_whisper(audio_bytes, mime_type, language)
+        except Exception as err:
+            last_error = err
+            logger.warning("STT engine '%s' failed: %s — trying next", engine, err)
 
-        if engine == "sarvam":
-            if not SARVAM_API_KEY:
-                logger.warning("Sarvam engine selected but SARVAM_API_KEY is empty — skipping")
-                errors.append("sarvam: API key not configured")
-                continue
-
-            try:
-                from app.services.sarvam_stt_service import transcribe as sarvam_transcribe
-
-                # For Indic: use "verbatim" first — preserves every spoken word
-                # including intent phrases like ವಿವರವಾಗಿ ("in detail")
-                primary_mode = "verbatim" if (language in INDIC_LANGS or language is None) else "transcribe"
-
-                sarvam_result = await sarvam_transcribe(
-                    audio_bytes, mime_type, language, mode=primary_mode
-                )
-                sarvam_result["stt_mode"] = primary_mode
-                sarvam_result["stt_detected_language"] = sarvam_result.get("language", language or "en")
-
-                logger.info(
-                    f"STT Sarvam [{primary_mode}]: '{sarvam_result['text'][:80]}' "
-                    f"conf={sarvam_result['confidence']:.2f} lang={sarvam_result['language']}"
-                )
-
-                # ── STEP 2: Short transcript → re-try with "transcribe" mode ──
-                if (
-                    len(sarvam_result["text"].strip()) < MIN_TRANSCRIPT_CHARS
-                    and primary_mode == "verbatim"
-                ):
-                    logger.info(
-                        f"Sarvam transcript too short ({len(sarvam_result['text'])} chars), "
-                        f"retrying with 'transcribe' mode..."
-                    )
-                    retry = await sarvam_transcribe(
-                        audio_bytes, mime_type, language, mode="transcribe"
-                    )
-                    if len(retry["text"].strip()) > len(sarvam_result["text"].strip()):
-                        retry["stt_mode"] = "transcribe"
-                        retry["stt_detected_language"] = retry.get("language", language or "en")
-                        sarvam_result = retry
-                        logger.info(
-                            f"STT Sarvam [transcribe retry]: '{sarvam_result['text'][:80]}'"
-                        )
-
-                # ── STEP 2b: Basic sanity check on Sarvam result ──────────────
-                if not _basic_transcript_ok(sarvam_result["text"]):
-                    logger.warning(
-                        f"Sarvam produced garbage transcript: '{sarvam_result['text'][:60]}' — forcing Whisper fallback"
-                    )
-                    sarvam_result["confidence"] = 0.0  # force Whisper path
-
-            except Exception as exc:
-                msg = f"sarvam: {type(exc).__name__}: {exc}"
-                logger.warning(f"STT engine 'sarvam' failed → trying next. Reason: {msg}")
-                errors.append(msg)
-
-        # ── STEP 3: Groq Whisper (fallback / parallel quality check) ──────────
-        elif engine == "groq":
-            # Determine if Sarvam result is usable
-            sarvam_ok = (
-                sarvam_result is not None
-                and sarvam_result["confidence"] >= MIN_SARVAM_CONFIDENCE
-                and len(sarvam_result["text"].strip()) >= MIN_TRANSCRIPT_CHARS
-                and _basic_transcript_ok(sarvam_result["text"])
-            )
-
-            # LANGUAGE ROUTING: Even if Sarvam is OK, if it detected English,
-            # run Whisper as a quality check — Whisper is better at English.
-            sarvam_detected_english = (
-                sarvam_ok
-                and sarvam_result is not None
-                and sarvam_result.get("stt_detected_language", "").startswith("en")
-            )
-
-            if sarvam_ok and not sarvam_detected_english:
-                # Sarvam detected Indic language & looks good → accept fast, skip Whisper
-                logger.info(
-                    f"STT: Sarvam result accepted (Indic: {sarvam_result.get('stt_detected_language')}) "
-                    f"— skipping Groq fallback"
-                )
-                return sarvam_result
-
-            if sarvam_detected_english:
-                logger.info(
-                    "STT: Sarvam detected English — running Whisper for better English accuracy"
-                )
-            else:
-                logger.info(
-                    "STT: Sarvam result weak or missing — running Groq Whisper for comparison"
-                )
-
-            try:
-                from app.services.whisper_service import transcribe as whisper_transcribe
-                groq_result = await whisper_transcribe(audio_bytes, mime_type, language)
-                groq_result["engine"] = "groq"
-                groq_result["stt_mode"] = "whisper"
-                groq_result["stt_detected_language"] = groq_result.get("language", language or "en")
-                logger.info(
-                    f"STT Groq Whisper: '{groq_result['text'][:80]}' "
-                    f"conf={groq_result['confidence']:.2f}"
-                )
-            except Exception as exc:
-                msg = f"groq: {type(exc).__name__}: {exc}"
-                logger.warning(f"STT engine 'groq' failed. Reason: {msg}")
-                errors.append(msg)
-
-        else:
-            logger.warning(f"Unknown STT engine '{engine}' in STT_ENGINE_PRIORITY — skipping")
-
-    # ── STEP 4: Pick the best result ──────────────────────────────────────────
-    if sarvam_result and groq_result:
-        sarvam_text = sarvam_result["text"].strip()
-        groq_text   = groq_result["text"].strip()
-
-        sarvam_has_intent = _has_intent_keywords(sarvam_text)
-        groq_has_intent   = _has_intent_keywords(groq_text)
-
-        sarvam_lang = sarvam_result.get("stt_detected_language", "")
-        groq_lang   = groq_result.get("stt_detected_language", "")
-
-        # ── ROUTING RULE A: English detected → prefer Whisper ─────────────
-        # Whisper is trained on far more English data and produces better results.
-        if sarvam_lang.startswith("en") and _basic_transcript_ok(groq_text):
-            logger.info(
-                "STT: English detected — preferring Whisper (better English accuracy)"
-            )
-            return groq_result
-
-        # ── ROUTING RULE B: Groq has intent keywords Sarvam missed ────────
-        if groq_has_intent and not sarvam_has_intent and len(groq_text) > len(sarvam_text):
-            logger.info(
-                "STT: Groq has intent keywords Sarvam missed — using Groq result"
-            )
-            return groq_result
-
-        # ── ROUTING RULE C: Sarvam produced garbage ───────────────────────
-        if not _basic_transcript_ok(sarvam_text) and _basic_transcript_ok(groq_text):
-            logger.info("STT: Sarvam produced garbage, Groq is clean — using Groq result")
-            return groq_result
-
-        # ── DEFAULT: Indic language → prefer Sarvam (native accuracy) ─────
-        logger.info(f"STT: Sarvam result selected for {sarvam_lang} (over Groq)")
-        return sarvam_result
-
-    if sarvam_result:
-        return sarvam_result
-
-    if groq_result:
-        return groq_result
-
-    # All engines exhausted
-    error_summary = " | ".join(errors)
-    logger.error(f"All STT engines failed: {error_summary}")
-    raise RuntimeError(f"All STT engines failed: {error_summary}")
+    raise RuntimeError(f"All STT engines failed. Last error: {last_error}")

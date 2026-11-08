@@ -32,7 +32,7 @@ import logging
 import httpx
 from app.config import SARVAM_API_KEY, SARVAM_BASE_URL, SUPPORTED_LANGUAGES
 
-logger = logging.getLogger("Oxlo VoxVision.ai.sarvam_stt")
+logger = logging.getLogger("Aetheris.OmniSense.sarvam_stt")
 
 SARVAM_STT_ENDPOINT = f"{SARVAM_BASE_URL}/speech-to-text"
 

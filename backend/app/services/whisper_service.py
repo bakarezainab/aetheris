@@ -3,7 +3,7 @@ import logging
 import httpx
 from app.config import MODELS, STT_LANGUAGE, GROQ_API_KEY, GROQ_BASE_URL, SUPPORTED_LANGUAGES
 
-logger = logging.getLogger("Oxlo VoxVision.ai.whisper")
+logger = logging.getLogger("Aetheris.OmniSense.whisper")
 
 MAX_RETRIES = 2
 RETRY_DELAYS = [0.5, 1.5]
