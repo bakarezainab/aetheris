@@ -13,10 +13,12 @@ venv/
 dist/
 build/
 
-# Node
+# Next.js & Node
 node_modules/
 dist/
 dist-ssr/
+.next/
+out/
 *.local
 
 # IDE and editor files
@@ -39,7 +41,7 @@ yarn-debug.log*
 pnpm-debug.log*
 
 # Project scratch files and draft docs
-oxlo_docs.md
+otari_docs.md
 vision_mode_ideas.md
 image.png
 image copy.png
