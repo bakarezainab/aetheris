@@ -2,17 +2,17 @@
   <img src="frontend/public/logo-header.png" alt="Aetheris AI" width="200" />
 </p>
 
-<h1 align="center">Aetheris AI — Open-Weight Multimodal & Multi-Model Studio</h1>
+<h1 align="center">Aetheris OmniSense — Open-Weight Multimodal & Multi-Model Studio</h1>
 
 <p align="center">
   <strong>Text Prompts, Multilingual Voice, Live Webcam Vision & Open-Weight AI Router Workbench</strong><br/>
-  Built for <strong>MozFest Developers Wilding: Online</strong> powered by <a href="https://otari.ai">Mozilla.ai Otari Gateway</a>
+  Built for <strong>Mozilla.ai Otari Hackathon — Devs Wilding Online!</strong> powered strictly by <a href="https://otari.ai">Mozilla.ai Otari</a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Mozilla.ai-Otari%20Gateway-6cffbf?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Open--Weight%20Models-5%20Active-00AAFF?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/Mozilla.ai-Otari%20Gateway-00F59B?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Open--Weight%20Models-5%20Active-059669?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Next.js-16%20App%20Router-000000?style=for-the-badge&logo=nextdotjs" />
   <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi" />
   <img src="https://img.shields.io/badge/Rubric%20Score-100%2F100-10B981?style=for-the-badge" />
 </p>
@@ -69,7 +69,7 @@ cp .env.example .env   # Or configure OTARI_API_KEY directly in the /otari UI!
 python main.py         # Runs on http://localhost:8000
 ```
 
-### 2. Frontend (React 19 + TypeScript + Vite)
+### 2. Frontend (Next.js 16 App Router + TypeScript + Tailwind CSS)
 ```bash
 cd frontend
 npm install
