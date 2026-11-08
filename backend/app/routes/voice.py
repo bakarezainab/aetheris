@@ -35,7 +35,7 @@ from app.services.language_service import (
 )
 from app.services.response_cleaner import clean_response
 
-logger = logging.getLogger("Oxlo VoxVision.ai.voice")
+logger = logging.getLogger("Aetheris.OmniSense.voice")
 
 router = APIRouter(prefix="/api/voice", tags=["Voice"])
 
@@ -410,8 +410,7 @@ async def chat_complete(req: ChatRequest):
 async def text_to_speech(req: SpeakRequest):
     """
     Convert text to speech.
-    - English → Kokoro 82M (Oxlo.ai, high quality)
-    - Indian languages (kn/ta/te/hi) → gTTS (Google Translate TTS, native Indic)
+    - Multilingual TTS via gTTS / Mozilla.ai Otari Kokoro 82M
     Returns raw MP3 audio bytes.
     """
     try:

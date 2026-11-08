@@ -12,7 +12,7 @@ Key improvements over v2:
 
 from typing import AsyncGenerator, List
 from openai.types.chat import ChatCompletionMessageParam
-from app.services.oxlo_client import oxlo, groq
+from app.services.otari_client import otari, groq
 from app.services.response_cleaner import clean_response
 from app.config import (
     MODELS, SUPPORTED_LANGUAGES,
@@ -24,7 +24,7 @@ from app.config import (
 import re
 import logging
 
-logger = logging.getLogger("Otari VoxVision.ai.chat")
+logger = logging.getLogger("Aetheris.OmniSense.chat")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ANTI-HALLUCINATION CORE PROMPT
@@ -587,7 +587,7 @@ async def chat_stream(
         target_language, language_name, native_script_instruction,
     )
 
-    client      = groq if target_model in GROQ_MODELS else oxlo
+    client      = groq if target_model in GROQ_MODELS else otari
     final_input = cleaned_input or user_message
     detail      = _wants_detail(final_input)
     max_tokens  = _max_tokens(mode, target_language, detail)

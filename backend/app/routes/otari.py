@@ -93,7 +93,7 @@ async def otari_routed_chat(body: OtariChatRequest):
             {
                 "role": "system",
                 "content": (
-                    "You are Otari-VoxVision AI powered by Mozilla.ai's Otari Gateway and open-weight models. "
+                    "You are Aetheris OmniSense AI powered strictly by Mozilla.ai's Otari Gateway and open-weight models. "
                     "Provide clear, structured, and accurate responses."
                 ),
             },
