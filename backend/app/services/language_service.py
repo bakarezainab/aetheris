@@ -17,7 +17,7 @@ import re
 import logging
 from app.config import SUPPORTED_LANGUAGES
 
-logger = logging.getLogger("Oxlo VoxVision.ai.language")
+logger = logging.getLogger("Aetheris.OmniSense.language")
 
 # ── 1. Keyword → language map ─────────────────────────────────────────────────
 _LANGUAGE_KEYWORDS: dict[str, str] = {

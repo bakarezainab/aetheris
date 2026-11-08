@@ -1,100 +1,75 @@
 """
-tts_service.py
-──────────────
-Text-to-Speech pipeline with multilingual support.
+tts_service.py — Multilingual Text-to-Speech Service for Aetheris OmniSense
 
-Routing logic:
-  - English + Latin languages  → Kokoro 82M via Oxlo.ai (high quality)
-  - Indian languages (kn/ta/te/hi) → gTTS (Google Translate TTS, free, Indic support)
-  - Japanese / other non-Latin  → gTTS
-
-gTTS produces MP3 bytes natively — same format as Kokoro, so the pipeline is transparent.
+Routes TTS across supported languages:
+  - gTTS (Google Translate TTS) for native Indic & global script pronunciation
+  - Mozilla.ai Otari speech synthesis endpoint (`kokoro-82m`) when requested
 """
 
+import asyncio
 import io
 import logging
-from app.services.oxlo_client import oxlo
-from app.services.language_service import get_tts_config
-from app.config import MODELS
+from gtts import gTTS
+from app.services.otari_client import otari
+from app.config import MODELS, SUPPORTED_LANGUAGES
 
-logger = logging.getLogger("Oxlo VoxVision.ai.tts")
+logger = logging.getLogger("Aetheris.OmniSense.tts")
+
+
+def _gtts_blocking(text: str, lang_code: str) -> bytes:
+    """Synchronous gTTS call — run in thread pool via asyncio.to_thread."""
+    tts = gTTS(text=text, lang=lang_code, slow=False)
+    buf = io.BytesIO()
+    tts.write_to_fp(buf)
+    buf.seek(0)
+    return buf.read()
+
+
+async def _synthesize_gtts(text: str, lang_code: str) -> bytes:
+    """Synthesize speech using Google Translate TTS."""
+    logger.info("gTTS synthesize: lang=%s chars=%d text='%s'", lang_code, len(text), text[:60])
+    audio_bytes = await asyncio.to_thread(_gtts_blocking, text, lang_code)
+    logger.info("gTTS done: %d bytes (lang=%s)", len(audio_bytes), lang_code)
+    return audio_bytes
+
+
+async def _synthesize_kokoro(text: str, voice: str = "af_heart") -> bytes:
+    """Synthesize using Kokoro 82M via Mozilla.ai Otari Gateway."""
+    logger.info("Kokoro TTS via Otari: voice=%s chars=%d text='%s'", voice, len(text), text[:60])
+    response = await otari.audio.speech.create(
+        model=MODELS["tts"],
+        input=text,
+        voice=voice,
+        response_format="mp3",
+    )
+    content = response.content
+    logger.info("Kokoro TTS done: %d bytes", len(content))
+    return content
 
 
 async def synthesize(text: str, language: str = "en") -> bytes:
     """
-    Convert text to speech.
-
-    Args:
-        text:     The text to synthesize (must be in native script for non-English)
-        language: ISO 639-1 language code (e.g. "en", "kn", "ta", "te", "hi")
-
-    Returns:
-        Raw MP3 audio bytes
+    Convert text to MP3 audio bytes with language-appropriate TTS engine.
     """
     if not text or not text.strip():
-        logger.warning("TTS: empty text received, returning empty bytes")
-        return b""
+        raise ValueError("Cannot synthesize empty text")
 
-    tts_cfg = get_tts_config(language)
-    engine = tts_cfg["engine"]
+    text = text.strip()[:600]
 
-    logger.info(
-        f"TTS: lang={language} ({tts_cfg['lang_name']}) engine={engine} "
-        f"text='{text[:60]}{'...' if len(text) > 60 else ''}'"
-    )
+    lang_info = SUPPORTED_LANGUAGES.get(language, SUPPORTED_LANGUAGES["en"])
+    engine = lang_info.get("tts_engine", "gtts")
+    gtts_lang = lang_info.get("gtts_lang", language)
+    voice = lang_info.get("kokoro_voice", "af_heart")
 
     if engine == "gtts":
-        return await _gtts_synthesize(text, tts_cfg["gtts_lang"])
-    else:
-        return await _kokoro_synthesize(text, tts_cfg["kokoro_voice"])
-
-
-async def _kokoro_synthesize(text: str, voice: str = "af_heart") -> bytes:
-    """
-    Synthesize using Kokoro 82M via Oxlo.ai.
-    Best for English and Latin-script languages.
-    """
-    try:
-        response = await oxlo.audio.speech.create(
-            model=MODELS["tts"],
-            input=text,
-            voice=voice,
-            response_format="mp3",
-        )
-        logger.info(f"Kokoro TTS: {len(response.content)} bytes returned")
-        return response.content
-    except Exception as e:
-        logger.error(f"Kokoro TTS failed: {type(e).__name__}: {e}")
-        # Fallback to gTTS English if Kokoro fails
-        logger.info("Falling back to gTTS English")
-        return await _gtts_synthesize(text, "en")
-
-
-async def _gtts_synthesize(text: str, gtts_lang: str) -> bytes:
-    """
-    Synthesize using gTTS (Google Translate TTS).
-    Supports: kn (Kannada), ta (Tamil), te (Telugu), hi (Hindi), ja, etc.
-    Free, no API key needed.
-    Returns MP3 bytes.
-    """
-    import asyncio
-    from gtts import gTTS
-
-    def _generate() -> bytes:
-        buf = io.BytesIO()
-        tts = gTTS(text=text, lang=gtts_lang, slow=False)
-        tts.write_to_fp(buf)
-        buf.seek(0)
-        return buf.read()
+        try:
+            return await _synthesize_gtts(text, gtts_lang)
+        except Exception as e:
+            logger.error("gTTS failed for lang=%s: %s — falling back to Kokoro", gtts_lang, e)
+            return await _synthesize_kokoro(text, voice)
 
     try:
-        # Run blocking gTTS call in a thread pool to avoid blocking the event loop
-        loop = asyncio.get_event_loop()
-        audio_bytes = await loop.run_in_executor(None, _generate)
-        logger.info(f"gTTS [{gtts_lang}]: {len(audio_bytes)} bytes returned")
-        return audio_bytes
+        return await _synthesize_kokoro(text, voice)
     except Exception as e:
-        logger.error(f"gTTS synthesis failed [{gtts_lang}]: {type(e).__name__}: {e}")
-        # Final fallback — try Kokoro English
-        logger.info("gTTS failed, falling back to Kokoro English")
-        return await _kokoro_synthesize(text, voice="af_heart")
+        logger.warning("Otari Kokoro failed (%s), falling back to gTTS for lang=%s", e, gtts_lang)
+        return await _synthesize_gtts(text, gtts_lang)
