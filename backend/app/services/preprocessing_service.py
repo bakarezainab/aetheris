@@ -13,7 +13,7 @@ Key changes vs v1:
 import re
 import logging
 
-logger = logging.getLogger("Oxlo VoxVision.ai.preprocess")
+logger = logging.getLogger("Aetheris.OmniSense.preprocess")
 
 # ── Filler words to strip — English only ────────────────────────────────────
 # We intentionally do NOT strip these from Indic-script text because many

@@ -13,7 +13,7 @@ Cleans the raw model response before it reaches the client:
 import re
 import logging
 
-logger = logging.getLogger("Oxlo VoxVision.ai.cleaner")
+logger = logging.getLogger("Aetheris.OmniSense.cleaner")
 
 # ── Markdown stripping ────────────────────────────────────────────────────────
 
