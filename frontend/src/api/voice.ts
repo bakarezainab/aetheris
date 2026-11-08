@@ -1,6 +1,6 @@
 import type { TranscribeResult } from '../types';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) || '';
 
 /**
  * Transcribe audio blob — sends WebM/Opus to backend.
@@ -66,8 +66,7 @@ export async function* streamChat(
 /**
  * Text to speech.
  * Passes language code so the backend routes to the correct TTS engine:
- *   English        → Kokoro 82M (Oxlo.ai, high quality)
- *   kn/ta/te/hi   → gTTS (Google Translate, native Indic)
+ *   Multilingual → gTTS / Mozilla.ai Otari Kokoro 82M
  */
 export async function speakText(text: string, language: string = 'en'): Promise<void> {
   const res = await fetch(`${API}/api/voice/speak`, {

@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useCallback } from 'react';
 
 interface Props {
@@ -84,9 +86,9 @@ export default function WaveformBars({ analyser }: Props) {
       // Create per-bar gradient
       const intensity = h / HEIGHT;
       const grad = ctx.createLinearGradient(x, y, x, y + h);
-      grad.addColorStop(0, `rgba(168, 85, 247, ${0.3 + intensity * 0.7})`);
-      grad.addColorStop(0.5, `rgba(0, 200, 255, ${0.5 + intensity * 0.5})`);
-      grad.addColorStop(1, `rgba(168, 85, 247, ${0.3 + intensity * 0.7})`);
+      grad.addColorStop(0, `rgba(0, 245, 155, ${0.35 + intensity * 0.65})`);
+      grad.addColorStop(0.5, `rgba(163, 230, 53, ${0.55 + intensity * 0.45})`);
+      grad.addColorStop(1, `rgba(0, 245, 155, ${0.35 + intensity * 0.65})`);
 
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -95,7 +97,7 @@ export default function WaveformBars({ analyser }: Props) {
 
       // Glow for tall bars
       if (intensity > 0.4) {
-        ctx.shadowColor = '#A855F7';
+        ctx.shadowColor = '#00F59B';
         ctx.shadowBlur = 6 * intensity;
         ctx.fill();
         ctx.shadowBlur = 0;

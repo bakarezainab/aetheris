@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,12 +16,13 @@ import { generateCompound, isCompoundPrompt } from '../api/compound';
 import { cleanResponse } from '../utils/textCleaners';
 import WaveformBars from './WaveformBars';
 import MiniAIAssistant from './MiniAIAssistant';
+import MultilingualWorldCanvas from './MultilingualWorldCanvas';
 import type { Message } from '../types';
 
 type Phase = 'idle' | 'recording' | 'transcribing' | 'thinking' | 'speaking' | 'generating_image';
 
 type ImageSize = '1024x1024' | '1024x1792' | '1792x1024';
-type ImageModel = 'oxlo-image-pro' | 'flux.1-schnell';
+type ImageModel = 'alibaba/qwen-image' | 'alibaba/qwen-image-fast';
 
 const SIZE_LABELS: Record<ImageSize, string> = {
   '1024x1024': 'Square',
@@ -28,9 +31,20 @@ const SIZE_LABELS: Record<ImageSize, string> = {
 };
 
 const MODEL_INFO: Record<ImageModel, { label: string; icon: typeof Crown; tier: string }> = {
-  'oxlo-image-pro': { label: 'Otari Flux Pro', icon: Crown, tier: 'Open-Weight Pro' },
-  'flux.1-schnell': { label: 'Flux.1 Schnell', icon: Zap, tier: 'Fast Node' },
+  'alibaba/qwen-image': { label: 'Otari Qwen Image', icon: Crown, tier: 'Open-Weight HD' },
+  'alibaba/qwen-image-fast': { label: 'Otari Qwen Fast', icon: Zap, tier: 'Fast Node' },
 };
+
+const OTARI_LANGUAGES = [
+  { code: 'en', name: 'English', script: 'English', sample: 'Explain how Mozilla Otari routes open-weight models' },
+  { code: 'hi', name: 'Hindi', script: 'हिन्दी', sample: 'नमस्ते! ओटारी एआई कैसे काम करता है?' },
+  { code: 'kn', name: 'Kannada', script: 'ಕನ್ನಡ', sample: 'ನಮಸ್ಕಾರ! ಚಹಾ ಮಾಡುವುದು ಹೇಗೆ ಎಂದು ವಿವರಿಸಿ' },
+  { code: 'ta', name: 'Tamil', script: 'தமிழ்', sample: 'வணக்கம்! செயற்கை நுண்ணறிவு பற்றி கூறுங்கள்' },
+  { code: 'te', name: 'Telugu', script: 'తెలుగు', sample: 'నమస్కారం! మీరు ఏ భాషలలో మాట్లాడగలరు?' },
+  { code: 'es', name: 'Spanish', script: 'Español', sample: '¡Hola! ¿Cómo funciona el enrutador Otari AI?' },
+  { code: 'fr', name: 'French', script: 'Français', sample: 'Bonjour ! Quels modèles open-weight utilisez-vous ?' },
+  { code: 'ja', name: 'Japanese', script: '日本語', sample: 'こんにちは！Aetheris OmniSenseの機能を教えてください' },
+];
 
 
 
@@ -63,7 +77,7 @@ export default function VoiceMode() {
   const [textPrompt, setTextPrompt] = useState('');
   const [imagePrompt, setImagePrompt] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ImageModel>('oxlo-image-pro');
+  const [selectedModel, setSelectedModel] = useState<ImageModel>('alibaba/qwen-image');
   const [selectedSize, setSelectedSize] = useState<ImageSize>('1024x1024');
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showSizePicker, setShowSizePicker] = useState(false);
@@ -371,7 +385,7 @@ export default function VoiceMode() {
   const handleDownload = useCallback((imageUrl: string, promptText: string) => {
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `Otari_VoxVision-${promptText.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+    link.download = `Aetheris_OmniSense-${promptText.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -457,22 +471,18 @@ export default function VoiceMode() {
     : null;
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden" style={{ background: '#070510' }}>
+    <div className="h-full flex flex-col relative overflow-hidden" style={{ background: '#040B08' }}>
 
-      {/* ── Looping Video Background ──────────────────────────── */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ opacity: 0.85, mixBlendMode: 'screen', filter: 'hue-rotate(70deg)' }}
-        src="https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4"
+      {/* ── Interactive Multilingual Otari 3D World Globe Animation ── */}
+      <MultilingualWorldCanvas
+        phase={phase}
+        activeLanguage={detectedLanguage}
+        audioLevel={_audioLevel}
       />
 
-      {/* Dark overlay */}
+      {/* Dark radial vignette overlay */}
       <div className="absolute inset-0 z-[1] pointer-events-none" style={{
-        background: 'radial-gradient(circle at center 40%, transparent 30%, rgba(7,5,16,0.7) 70%, rgba(7,5,16,0.95) 100%)',
+        background: 'radial-gradient(circle at center 42%, transparent 32%, rgba(4,11,8,0.68) 72%, rgba(4,11,8,0.95) 100%)',
       }} />
 
       {/* ── Content Layer ──────────────────────────────────────── */}
@@ -490,9 +500,48 @@ export default function VoiceMode() {
             >
               {messages.length <= 1 && phase === 'idle' && !isGeneratingImage ? (
                 <>
-                  <h2 className="text-5xl font-bold" style={{ color: '#A855F7', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
-                    What can I help with?
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-4"
+                    style={{
+                      background: 'rgba(0, 245, 155, 0.1)',
+                      border: '1px solid rgba(0, 245, 155, 0.28)',
+                      color: '#00F59B',
+                    }}
+                  >
+                    <span>🌐 Otari Multilingual Neural World • 8 Native Languages</span>
+                  </div>
+                  <h2 className="text-4xl sm:text-5xl font-bold" style={{ color: '#00F59B', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
+                    Speak or type in any language
                   </h2>
+                  <p className="text-sm mt-2 max-w-lg mx-auto" style={{ color: 'rgba(236, 253, 245, 0.65)' }}>
+                    Powered by Mozilla.ai Otari open-weight models (<code className="text-[#A3E635]">alibaba/qwen3-32b</code> &amp; <code className="text-[#00F59B]">qwen-3.5-35b-a3b</code>). Select a language node on the globe or tap below:
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-5 max-w-xl mx-auto">
+                    {OTARI_LANGUAGES.map(l => {
+                      const active = detectedLanguage === l.code;
+                      return (
+                        <button
+                          key={l.code}
+                          onClick={() => {
+                            setDetectedLanguage(l.code);
+                            setDetectedLanguageName(l.name);
+                            setTextPrompt(l.sample);
+                            setShowTextPanel(true);
+                          }}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+                          style={{
+                            background: active ? 'rgba(0, 245, 155, 0.2)' : 'rgba(4, 14, 10, 0.78)',
+                            border: active ? '1px solid #A3E635' : '1px solid rgba(0, 245, 155, 0.22)',
+                            color: active ? '#A3E635' : '#ECFDF5',
+                            boxShadow: active ? '0 0 18px rgba(0, 245, 155, 0.25)' : 'none',
+                          }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? '#A3E635' : '#00F59B' }} />
+                          <span>{l.script}</span>
+                          <span className="opacity-55 text-[10px]">({l.name})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </>
               ) : (
                 <>

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -41,10 +43,10 @@ export default function MiniAIAssistant({ phase, isGeneratingImage, hasMessages 
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             className="relative pr-8 pl-4 py-2.5 rounded-2xl shadow-xl pointer-events-auto"
             style={{
-              background: 'rgba(7, 5, 16, 0.85)',
+              background: 'rgba(4, 14, 10, 0.88)',
               backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(168,85,247,0.2)',
-              color: 'rgba(255,255,255,0.9)',
+              border: '1px solid rgba(0, 245, 155, 0.25)',
+              color: 'rgba(236, 253, 245, 0.92)',
               fontSize: '12px',
               maxWidth: '220px',
               lineHeight: '1.4',
@@ -68,20 +70,20 @@ export default function MiniAIAssistant({ phase, isGeneratingImage, hasMessages 
       <motion.div
         animate={{
           boxShadow: [
-            '0 0 15px rgba(168,85,247,0.2)',
-            '0 0 25px rgba(168,85,247,0.6)',
-            '0 0 15px rgba(168,85,247,0.2)'
+            '0 0 15px rgba(0, 245, 155, 0.25)',
+            '0 0 28px rgba(0, 245, 155, 0.65)',
+            '0 0 15px rgba(0, 245, 155, 0.25)'
           ],
         }}
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
         className="w-12 h-12 rounded-full flex items-center justify-center pointer-events-auto cursor-pointer"
         style={{
-          background: 'radial-gradient(circle at 30% 30%, #A855F7, #004488)',
-          border: '1px solid rgba(168,85,247,0.4)',
+          background: 'radial-gradient(circle at 30% 30%, #00F59B, #047857)',
+          border: '1px solid rgba(163, 230, 53, 0.45)',
         }}
         onClick={() => setIsVisible(v => !v)}
       >
-        <Sparkles className="w-5 h-5 text-white opacity-80" />
+        <Sparkles className="w-5 h-5 text-[#04120C] opacity-90" />
       </motion.div>
     </div>
   );
