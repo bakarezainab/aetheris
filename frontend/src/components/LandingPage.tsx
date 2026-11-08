@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useState, type FC } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 const LandingPage: FC = () => {
   const [themeMode, setThemeMode] = useState<string>('system');
@@ -32,15 +34,15 @@ const LandingPage: FC = () => {
 
   // Theme Logic
   useEffect(() => {
-    const currentMode = localStorage.getItem('Aetheris-voxvision_theme') || 'system';
+    const currentMode = localStorage.getItem('Aetheris-omnisense_theme') || 'system';
     setThemeMode(currentMode);
     applyTheme(currentMode);
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = () => {
       if (
-        localStorage.getItem('Aetheris-voxvision_theme') === 'system' ||
-        !localStorage.getItem('Aetheris-voxvision_theme')
+        localStorage.getItem('Aetheris-omnisense_theme') === 'system' ||
+        !localStorage.getItem('Aetheris-omnisense_theme')
       ) {
         applyTheme('system');
       }
@@ -68,7 +70,7 @@ const LandingPage: FC = () => {
     const currentIndex = modes.indexOf(themeMode);
     const nextMode = modes[(currentIndex + 1) % modes.length];
     setThemeMode(nextMode);
-    localStorage.setItem('Aetheris-voxvision_theme', nextMode);
+    localStorage.setItem('Aetheris-omnisense_theme', nextMode);
     applyTheme(nextMode);
   };
 
@@ -129,12 +131,12 @@ const LandingPage: FC = () => {
           <a href="#" className="flex items-center gap-3 group">
             <img
               src="/logo-icon.png"
-              alt="Aetheris-voxvision.ai Logo"
+              alt="Aetheris-OmniSense.ai Logo"
               className="h-9 w-auto logo-glow transition-all duration-300 group-hover:scale-110"
             />
             <div>
               <span className="text-lg font-bold leading-tight text-text-primary">
-                <span className="text-accent">Aetheris-voxvision.ai</span>
+                <span className="text-accent">Aetheris-OmniSense.ai</span>
               </span>
             </div>
           </a>
@@ -213,8 +215,8 @@ const LandingPage: FC = () => {
           </button>
 
           <Link
-            to="/voice"
-            className="bg-accent text-white px-5 py-2 rounded-xl font-bold text-sm hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all active:scale-95"
+            href="/voice"
+            className="bg-accent text-white px-5 py-2 rounded-xl font-bold text-sm hover:shadow-[0_0_25px_rgba(0,245,155,0.4)] transition-all active:scale-95"
           >
             Launch App
           </Link>
@@ -351,7 +353,7 @@ const LandingPage: FC = () => {
               <div className="relative inline-block">
                 <img
                   src="/logo-icon.png"
-                  alt="Aetheris-voxvision Logo"
+                  alt="Aetheris OmniSense Logo"
                   className="h-24 md:h-32 w-auto animate-eye-blink"
                 />
                 <div className="eye-blink-line" />
@@ -369,7 +371,7 @@ const LandingPage: FC = () => {
 
             {/* Subhead */}
             <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light animate-fade-in-up delay-300">
-              Aetheris-voxvision.ai merges real-time computer vision, multilingual voice &amp; text
+              Aetheris-OmniSense.ai merges real-time computer vision, multilingual voice &amp; text
               interaction, and AI image generation into a single multimodal assistant, powered by
               the{' '}
               <a
@@ -386,10 +388,10 @@ const LandingPage: FC = () => {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-400">
               <Link
-                to="/voice"
+                href="/voice"
                 className="btn-pill btn-pill-primary text-white px-10 py-4 text-lg font-bold w-full sm:w-auto text-center"
               >
-                Try Aetheris-voxvision.ai
+                Try Aetheris-OmniSense.ai
               </Link>
               <a
                 href="#features"
@@ -1104,12 +1106,12 @@ const LandingPage: FC = () => {
             <div className="flex items-center gap-3">
               <img
                 src="/logo-icon.png"
-                alt="Aetheris-voxvision.ai"
+                alt="Aetheris-OmniSense.ai"
                 className="h-8 w-auto logo-glow"
               />
               <div>
                 <div className="text-sm font-bold text-text-primary">
-                  <span className="text-accent">Aetheris-voxvision.ai</span>
+                  <span className="text-accent">Aetheris-OmniSense.ai</span>
                 </div>
                 <div className="text-[11px] text-slate-500">
                   Built for Mozilla.ai Otari Hackathon · Powered by Open-Weight Models
@@ -1118,13 +1120,13 @@ const LandingPage: FC = () => {
             </div>
 
             <div className="flex items-center gap-6 text-xs text-slate-400">
-              <Link to="/voice" className="hover:text-accent transition-colors">
+              <Link href="/voice" className="hover:text-accent transition-colors">
                 Voice &amp; Text
               </Link>
-              <Link to="/vision" className="hover:text-accent transition-colors">
+              <Link href="/vision" className="hover:text-accent transition-colors">
                 Vision
               </Link>
-              <Link to="/otari" className="hover:text-accent transition-colors">
+              <Link href="/otari" className="hover:text-accent transition-colors">
                 Otari AI
               </Link>
               <a
