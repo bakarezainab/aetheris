@@ -14,7 +14,7 @@ from app.services.response_cleaner import clean_response
 from app.config import SUPPORTED_LANGUAGES
 import logging
 
-logger = logging.getLogger("Oxlo VoxVision.ai.vision_routes")
+logger = logging.getLogger("Aetheris.OmniSense.vision_routes")
 
 router = APIRouter(prefix="/api/vision", tags=["Vision"])
 

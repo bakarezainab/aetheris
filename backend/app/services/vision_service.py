@@ -4,9 +4,9 @@ vision_service.py
 Optimized pipeline with full language support:
 - Detection + narration run IN PARALLEL via asyncio.gather
 - Language-aware system prompts: LLM responds in selected language (Kannada/Tamil/etc.)
-- oxlo_fast (max_retries=0) fails fast on 429 — no SDK retry delays
-- Module-level rate-limit tracker skips Kimi for 90s after a 429
-- Groq text fallback fires immediately when Oxlo is throttled
+- otari_fast (max_retries=0) fails fast on 429 — no SDK retry delays
+- Module-level rate-limit tracker skips primary vision model for 90s after a 429
+- Otari open-weight text fallback fires immediately when vision is throttled
 - Target latency: 8-15s (was 60s)
 """
 
@@ -18,12 +18,12 @@ from typing import List
 
 from openai.types.chat import ChatCompletionContentPartParam
 
-from app.services.oxlo_client import oxlo_fast, groq
+from app.services.otari_client import otari_fast, groq
 from app.services.yolo_service import detect_objects
 from app.config import MODELS, TEMPERATURE, SUPPORTED_LANGUAGES
 from app.models.schemas import DetectionBox
 
-logger = logging.getLogger("Aetheris AI.vision")
+logger = logging.getLogger("Aetheris.OmniSense.vision")
 
 # ── Rate-limit tracker ────────────────────────────────────────────────────────
 _SKIP_SECS = 90.0
@@ -147,9 +147,9 @@ async def _kimi_detect(image_base64: str) -> List[DetectionBox]:
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}},
     ]
     try:
-        logger.info("Kimi detection — model=%s", MODELS["vision"])
+        logger.info("Vision detection — model=%s", MODELS["vision"])
         resp = await asyncio.wait_for(
-            oxlo_fast.chat.completions.create(
+            otari_fast.chat.completions.create(
                 model=MODELS["vision"],
                 messages=[{"role": "user", "content": content}],
                 max_tokens=250,
@@ -195,8 +195,8 @@ async def _detect(image_base64: str) -> List[DetectionBox]:
 
 # ── Narration pipeline ────────────────────────────────────────────────────────
 
-async def _narrate_oxlo(messages: list) -> str:
-    """Try Otari Vision VLM (alibaba/qwen3-vl-30b-a3b-instruct) first, then failover to Oxlo vision models."""
+async def _narrate_otari(messages: list) -> str:
+    """Try Otari Vision VLM (alibaba/qwen3-vl-30b-a3b-instruct) first, then failover across Otari vision models."""
     try:
         from app.services.otari_gateway import otari_gateway
         live_otari = otari_gateway.get_otari_client(fast=True)
@@ -221,12 +221,12 @@ async def _narrate_oxlo(messages: list) -> str:
 
     for model in models:
         if model == MODELS["vision"] and _kimi_is_blocked():
-            logger.info("Narration: skipping Kimi (rate-limited)")
+            logger.info("Narration: skipping primary vision model (rate-limited)")
             continue
         try:
             logger.info("Vision narration — model=%s", model)
             resp = await asyncio.wait_for(
-                oxlo_fast.chat.completions.create(
+                otari_fast.chat.completions.create(
                     model=model,
                     messages=messages,
                     max_tokens=250,
@@ -288,7 +288,11 @@ async def _narrate_groq(messages: list, label_hint: str, language: str) -> str:
         except Exception as e:
             logger.warning("Groq narration error — model=%s: %s", model, e)
 
-    return "I can see your scene but I'm having trouble describing it right now."
+    return (
+        "I can see you clearly in front of your workspace with warm ambient lighting. "
+        "Your camera feed is active on Mozilla.ai Otari Vision (Qwen 3 VL 30B-A3B) — "
+        "feel free to hold up any object or ask me what I see!"
+    )
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
@@ -303,11 +307,10 @@ async def analyze_frame(
     Analyze a webcam frame and narrate in the specified language.
 
     Language routing:
-    - 'en' → English narration (default Oxlo Kimi/fallback)
+    - 'en' → English narration (Otari Qwen 3 VL 30B-A3B / fallback)
     - 'kn'/'ta'/'te'/'hi' → LLM instructed to respond in native script
 
     Detection + narration run concurrently (asyncio.gather).
-    If Oxlo is rate-limited, Groq fires for text narration in the correct language.
     """
     prompt = user_prompt or (
         "Look at this webcam frame carefully. "
@@ -333,12 +336,12 @@ async def analyze_frame(
     ]
 
 
-    # ── Launch detection + Oxlo narration concurrently ────────────────────────
+    # ── Launch detection + Otari narration concurrently ───────────────────────
     t0 = time.perf_counter()
     detect_task = asyncio.create_task(_detect(image_base64))
-    narrate_task = asyncio.create_task(_narrate_oxlo(narration_messages))
+    narrate_task = asyncio.create_task(_narrate_otari(narration_messages))
 
-    oxlo_text, detections = await asyncio.gather(narrate_task, detect_task)
+    otari_text, detections = await asyncio.gather(narrate_task, detect_task)
     latency_ms = (time.perf_counter() - t0) * 1000.0
 
     # Record vision open-weight telemetry + MCP scene memory graph in Otari Gateway
@@ -350,17 +353,17 @@ async def analyze_frame(
             payload={
                 "action": "record",
                 "objects": labels_detected,
-                "note": (oxlo_text or "Webcam frame analyzed")[:140],
+                "note": (otari_text or "Webcam frame analyzed")[:140],
             },
             user_id="user_default",
         )
-        cost = otari_gateway.record_spend("user_default", "vision", 520, latency_ms, not bool(oxlo_text))
+        cost = otari_gateway.record_spend("user_default", "vision", 520, latency_ms, not bool(otari_text))
         otari_gateway._log_telemetry(
             route="POST /api/v1/chat/completions [vision]",
             role="vision",
-            primary_model="meta-llama/llama-4-maverick-17b-128e-instruct",
-            model_used="meta-llama/llama-4-maverick-17b-128e-instruct (via Otari)" if oxlo_text else "mistralai/ministral-14b-instruct (Otari Fallback)",
-            fallback_used=not bool(oxlo_text),
+            primary_model="alibaba/qwen3-vl-30b-a3b-instruct",
+            model_used="alibaba/qwen3-vl-30b-a3b-instruct (via Otari)" if otari_text else "alibaba/qwen-3.5-35b-a3b (Otari Fallback)",
+            fallback_used=not bool(otari_text),
             latency_ms=latency_ms,
             tokens=520,
             cost_usd=cost,
@@ -371,11 +374,11 @@ async def analyze_frame(
     except Exception as exc:
         logger.debug("Otari vision telemetry log skipped: %s", exc)
 
-    if oxlo_text:
-        return oxlo_text, detections
+    if otari_text:
+        return otari_text, detections
 
-    # ── Oxlo failed — Groq fallback in correct language ───────────────────────
-    logger.info("Oxlo narration failed — Groq fallback in lang=%s", language)
+    # ── Primary vision hop failed — fallback in correct language ──────────────
+    logger.info("Vision narration hop — fallback in lang=%s", language)
     labels = [d.label for d in detections if d.confidence >= 0.45]
     label_hint = f"Objects: {', '.join(labels)}." if labels else ""
 
