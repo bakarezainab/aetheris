@@ -9,7 +9,7 @@ Gives the Vision Mode a conversational voice assistant brain:
   • Recapture detect   — AI can't see clearly → ask user to reposition
 
 Reuses existing infrastructure:
-  - vision_service._narrate_oxlo / _narrate_groq  for VLM calls
+  - vision_service._narrate_otari / _narrate_groq for VLM calls
   - chat_service.chat_full                        for text-only chat
   - stt_service.transcribe                        for STT
   - tts_service.synthesize                        for TTS
@@ -22,12 +22,12 @@ from typing import List
 
 from openai.types.chat import ChatCompletionContentPartParam
 
-from app.services.oxlo_client import oxlo_fast, groq
+from app.services.otari_client import otari_fast, groq
 from app.services.chat_service import chat_full
 from app.services.response_cleaner import clean_response
 from app.config import MODELS, TEMPERATURE, SUPPORTED_LANGUAGES
 
-logger = logging.getLogger("Oxlo VoxVision.ai.vision_voice")
+logger = logging.getLogger("Aetheris.OmniSense.vision_voice")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -498,7 +498,7 @@ async def generate_greeting(
         try:
             logger.info("Greeting: model=%s lang=%s", model, language)
             resp = await asyncio.wait_for(
-                oxlo_fast.chat.completions.create(
+                otari_fast.chat.completions.create(
                     model=model,
                     messages=messages,
                     max_tokens=200,
@@ -564,7 +564,7 @@ async def vision_aware_chat(
         try:
             logger.info("Vision chat: model=%s lang=%s transcript='%s'", model, language, transcript[:50])
             resp = await asyncio.wait_for(
-                oxlo_fast.chat.completions.create(
+                otari_fast.chat.completions.create(
                     model=model,
                     messages=messages,
                     max_tokens=400,

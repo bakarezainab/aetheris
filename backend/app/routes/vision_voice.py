@@ -29,7 +29,7 @@ from app.services.language_service import reconcile_language
 from app.services.intent_service import detect_intent_fast
 from app.services.response_cleaner import clean_response
 
-logger = logging.getLogger("Oxlo VoxVision.ai.vision_voice")
+logger = logging.getLogger("Aetheris.OmniSense.vision_voice")
 
 router = APIRouter(prefix="/api/vision/voice", tags=["Vision Voice"])
 
