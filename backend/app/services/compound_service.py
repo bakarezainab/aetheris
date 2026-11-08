@@ -13,10 +13,10 @@ import re
 import logging
 from typing import List, Optional
 from app.services.image_service import generate_image
-from app.services.oxlo_client import oxlo, groq
+from app.services.otari_client import otari, groq
 from app.config import MODELS, MAX_TOKENS_COMPOUND, TEMPERATURE_COMPOUND
 
-logger = logging.getLogger("Oxlo VoxVision.ai.compound")
+logger = logging.getLogger("Aetheris.OmniSense.compound")
 
 # ── Domain detection keywords ─────────────────────────────────────────────────
 _DOMAIN_KEYWORDS = {
@@ -208,7 +208,7 @@ async def execute_compound_request(
     structured_prompt = structured_prompt.format(subject=image_subject)
 
     target_model = MODELS["chat"]
-    client = groq if target_model in GROQ_MODELS else oxlo
+    client = groq if target_model in GROQ_MODELS else otari
 
     try:
         response = await client.chat.completions.create(
@@ -227,7 +227,7 @@ async def execute_compound_request(
         structured_text = ""
         for fallback in MODELS.get("chat_fallback", []):
             try:
-                fb_client = groq if fallback in GROQ_MODELS else oxlo
+                fb_client = groq if fallback in GROQ_MODELS else otari
                 response = await fb_client.chat.completions.create(
                     model=fallback,
                     messages=[

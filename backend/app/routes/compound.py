@@ -4,7 +4,7 @@ from app.models.schemas import CompoundRequest, CompoundResponse
 from app.services.compound_service import execute_compound_request
 from app.services.intent_service import detect_intent_fast
 
-logger = logging.getLogger("Oxlo VoxVision.ai.compound")
+logger = logging.getLogger("Aetheris.OmniSense.compound")
 
 router = APIRouter(prefix="/api/compound", tags=["Compound"])
 
