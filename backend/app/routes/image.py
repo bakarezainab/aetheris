@@ -4,7 +4,7 @@ from app.models.schemas import ImageGenerateRequest, ImageGenerateResponse
 from app.services.image_service import generate_image
 from app.config import MODELS, IMAGE_DEFAULT_SIZE
 
-logger = logging.getLogger("Oxlo VoxVision.ai.image")
+logger = logging.getLogger("Aetheris.OmniSense.image")
 
 router = APIRouter(prefix="/api/image", tags=["Image"])
 
@@ -12,9 +12,7 @@ router = APIRouter(prefix="/api/image", tags=["Image"])
 @router.post("/generate", response_model=ImageGenerateResponse)
 async def generate_image_endpoint(req: ImageGenerateRequest):
     """
-    Generate an image from a text prompt.
-
-    Uses Oxlo Image Pro (primary) or Flux.1 Schnell (fast).
+    Generate an image from a text prompt via Mozilla.ai Otari (`alibaba/qwen-image`).
     Returns base64-encoded image data.
     """
     try:
@@ -45,19 +43,19 @@ async def generate_image_endpoint(req: ImageGenerateRequest):
 
 @router.get("/models")
 async def list_image_models():
-    """List available image generation models."""
+    """List available Otari image generation models."""
     return {
         "models": [
             {
-                "id": MODELS["image"],
-                "name": "Oxlo Image Pro",
-                "tier": "Premium",
+                "id": "alibaba/qwen-image",
+                "name": "Otari Qwen Image",
+                "tier": "Open-Weight HD",
                 "speed": "standard",
             },
             {
-                "id": MODELS["image_fast"],
-                "name": "Flux.1 Schnell",
-                "tier": "Pro",
+                "id": "alibaba/qwen-image-fast",
+                "name": "Otari Qwen Image Fast",
+                "tier": "Open-Weight Turbo",
                 "speed": "fast",
             },
         ],
