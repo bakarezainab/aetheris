@@ -1,36 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
   <defs>
-    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F59B" stop-opacity="0.32"/>
-      <stop offset="65%" stop-color="#059669" stop-opacity="0.12"/>
+    <!-- Background Radial Glow -->
+    <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00F59B" stop-opacity="0.45"/>
+      <stop offset="45%" stop-color="#059669" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#040B08" stop-opacity="1"/>
     </radialGradient>
-    <linearGradient id="emeraldGrad" x1="12" y1="12" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+
+    <!-- Emerald-to-Lime Neon Gradients -->
+    <linearGradient id="lidGrad" x1="10" y1="64" x2="118" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#00F59B"/>
       <stop offset="50%" stop-color="#10B981"/>
       <stop offset="100%" stop-color="#A3E635"/>
     </linearGradient>
-    <linearGradient id="irisCore" x1="35" y1="35" x2="85" y2="85" gradientUnits="userSpaceOnUse">
+
+    <linearGradient id="irisGrad" x1="44" y1="44" x2="84" y2="84" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#A3E635"/>
-      <stop offset="100%" stop-color="#00F59B"/>
+      <stop offset="50%" stop-color="#00F59B"/>
+      <stop offset="100%" stop-color="#059669"/>
     </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="neonBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="120" height="120" rx="28" fill="#040B08"/>
-  <rect x="3" y="3" width="114" height="114" rx="25" fill="url(#bgGlow)" stroke="url(#emeraldGrad)" stroke-width="2.5" stroke-opacity="0.65"/>
-  <!-- Outer hexagonal neural ring -->
-  <polygon points="60,14 99,36 99,84 60,106 21,84 21,36" stroke="url(#emeraldGrad)" stroke-width="3" fill="none" stroke-linejoin="round" opacity="0.85"/>
-  <!-- Orbital meridians -->
-  <ellipse cx="60" cy="60" rx="34" ry="16" transform="rotate(-28 60 60)" stroke="#00F59B" stroke-width="2.2" fill="none" opacity="0.85"/>
-  <ellipse cx="60" cy="60" rx="34" ry="16" transform="rotate(28 60 60)" stroke="#A3E635" stroke-width="2.2" fill="none" opacity="0.75"/>
-  <!-- Central OmniSense Iris -->
-  <circle cx="60" cy="60" r="15" fill="#040B08" stroke="url(#emeraldGrad)" stroke-width="3.5"/>
-  <circle cx="60" cy="60" r="7.5" fill="url(#irisCore)"/>
-  <circle cx="57" cy="57" r="2.5" fill="#ECFDF5"/>
-  <!-- Orbiting language/vision nodes -->
-  <circle cx="60" cy="14" r="4" fill="#00F59B"/>
-  <circle cx="99" cy="36" r="3.5" fill="#A3E635"/>
-  <circle cx="99" cy="84" r="3.5" fill="#00F59B"/>
-  <circle cx="60" cy="106" r="4" fill="#A3E635"/>
-  <circle cx="21" cy="84" r="3.5" fill="#00F59B"/>
-  <circle cx="21" cy="36" r="3.5" fill="#A3E635"/>
+
+  <!-- Dark Rounded Container -->
+  <rect width="128" height="128" rx="30" fill="#040B08"/>
+  <rect x="2" y="2" width="124" height="124" rx="28" fill="url(#eyeGlow)" stroke="#059669" stroke-width="2" stroke-opacity="0.6"/>
+
+  <!-- Orbital Perception Ring (Multimodal Waves) -->
+  <g>
+    <ellipse cx="64" cy="64" rx="54" ry="24" transform="rotate(-20 64 64)" stroke="#00F59B" stroke-width="1.8" stroke-dasharray="6 4" stroke-opacity="0.65">
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        from="-20 64 64"
+        to="340 64 64"
+        dur="16s"
+        repeatCount="indefinite"
+      />
+    </ellipse>
+    <ellipse cx="64" cy="64" rx="54" ry="24" transform="rotate(25 64 64)" stroke="#A3E635" stroke-width="1.5" stroke-dasharray="4 6" stroke-opacity="0.5">
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        from="25 64 64"
+        to="-335 64 64"
+        dur="22s"
+        repeatCount="indefinite"
+      />
+    </ellipse>
+  </g>
+
+  <!-- The Omniscient Eye Outer Silhouette -->
+  <!-- Upper Eyelid -->
+  <path d="M 16 64 C 36 28, 92 28, 112 64" fill="none" stroke="url(#lidGrad)" stroke-width="4.5" stroke-linecap="round" filter="url(#neonBlur)">
+    <animate attributeName="d"
+      values="M 16 64 C 36 28, 92 28, 112 64; M 16 64 C 36 34, 92 34, 112 64; M 16 64 C 36 28, 92 28, 112 64"
+      dur="4s" repeatCount="indefinite" />
+  </path>
+  <!-- Lower Eyelid -->
+  <path d="M 16 64 C 36 100, 92 100, 112 64" fill="none" stroke="url(#lidGrad)" stroke-width="3.8" stroke-linecap="round" filter="url(#neonBlur)">
+    <animate attributeName="d"
+      values="M 16 64 C 36 100, 92 100, 112 64; M 16 64 C 36 94, 92 94, 112 64; M 16 64 C 36 100, 92 100, 112 64"
+      dur="4s" repeatCount="indefinite" />
+  </path>
+
+  <!-- Eye Corner Sensory Anchors -->
+  <circle cx="16" cy="64" r="3.5" fill="#00F59B"/>
+  <circle cx="112" cy="64" r="3.5" fill="#A3E635"/>
+
+  <!-- Rotating Aperture Radar Ring -->
+  <g>
+    <circle cx="64" cy="64" r="26" fill="#030A06" stroke="#00F59B" stroke-width="1.8" stroke-dasharray="4 3" stroke-opacity="0.85"/>
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 64 64"
+      to="360 64 64"
+      dur="8s"
+      repeatCount="indefinite"
+    />
+  </g>
+
+  <!-- Glowing Iris -->
+  <circle cx="64" cy="64" r="18" fill="url(#irisGrad)" stroke="#ECFDF5" stroke-width="1.5" stroke-opacity="0.75" filter="url(#neonBlur)">
+    <animate attributeName="r" values="18; 19.5; 18" dur="2.4s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Inner Concentric Scan Ring -->
+  <circle cx="64" cy="64" r="12" fill="none" stroke="#040B08" stroke-width="2.2" stroke-opacity="0.9"/>
+
+  <!-- Central Pupil (Pulsing Black Void with Glowing Cyber Core) -->
+  <circle cx="64" cy="64" r="8" fill="#040B08">
+    <animate attributeName="r" values="8; 6.5; 8" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="64" cy="64" r="3.2" fill="#00F59B">
+    <animate attributeName="r" values="3.2; 4; 3.2" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Specular Reflection Glint -->
+  <circle cx="58" cy="58" r="3" fill="#FFFFFF" fill-opacity="0.95"/>
+  <circle cx="70" cy="70" r="1.5" fill="#A3E635" fill-opacity="0.8"/>
 </svg>

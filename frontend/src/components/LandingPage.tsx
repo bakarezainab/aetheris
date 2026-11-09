@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FC } from 'react';
 import Link from 'next/link';
+import OmniEyeLogo from './OmniEyeLogo';
 
 const LandingPage: FC = () => {
   const [themeMode, setThemeMode] = useState<string>('system');
@@ -129,14 +130,10 @@ const LandingPage: FC = () => {
         <div className="flex items-center gap-8">
           {/* Logo */}
           <a href="#" className="flex items-center gap-3 group">
-            <img
-              src="/logo-icon.png"
-              alt="Aetheris-OmniSense.ai Logo"
-              className="h-9 w-auto logo-glow transition-all duration-300 group-hover:scale-110"
-            />
+            <OmniEyeLogo size={36} glow={true} />
             <div>
               <span className="text-lg font-bold leading-tight text-text-primary">
-                <span className="text-accent">Aetheris-OmniSense.ai</span>
+                Aetheris <span className="text-accent">OmniSense</span>
               </span>
             </div>
           </a>
@@ -348,15 +345,16 @@ const LandingPage: FC = () => {
               </span>
             </a>
 
-            {/* Logo Float with Blink Animation */}
+            {/* Animated OmniSense Omniscient Eye Hero Emblem */}
             <div className="flex justify-center mb-8 animate-fade-in-up delay-100">
-              <div className="relative inline-block">
-                <img
-                  src="/logo-icon.png"
-                  alt="Aetheris OmniSense Logo"
-                  className="h-24 md:h-32 w-auto animate-eye-blink"
-                />
-                <div className="eye-blink-line" />
+              <div className="relative inline-flex items-center justify-center p-4 rounded-3xl"
+                style={{
+                  background: 'radial-gradient(circle, rgba(0,245,155,0.1) 0%, rgba(4,11,8,0.85) 75%)',
+                  border: '1px solid rgba(0,245,155,0.25)',
+                  boxShadow: '0 0 50px rgba(0,245,155,0.18)',
+                }}
+              >
+                <OmniEyeLogo size={110} glow={true} />
               </div>
             </div>
 
@@ -1104,14 +1102,10 @@ const LandingPage: FC = () => {
         >
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img
-                src="/logo-icon.png"
-                alt="Aetheris-OmniSense.ai"
-                className="h-8 w-auto logo-glow"
-              />
+              <OmniEyeLogo size={34} glow={false} />
               <div>
                 <div className="text-sm font-bold text-text-primary">
-                  <span className="text-accent">Aetheris-OmniSense.ai</span>
+                  Aetheris <span className="text-accent">OmniSense.ai</span>
                 </div>
                 <div className="text-[11px] text-slate-500">
                   Built for Mozilla.ai Otari Hackathon · Powered by Open-Weight Models

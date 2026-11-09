@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { Mic, Eye, Sparkles } from 'lucide-react';
 import type { Mode } from '../types';
+import OmniEyeLogo from './OmniEyeLogo';
 
 interface AppShellProps {
   children: ReactNode;
@@ -46,16 +47,8 @@ export default function AppShell({ children }: AppShellProps) {
       <header className="absolute top-0 left-0 right-0 z-50 px-6 py-5 pointer-events-none">
         <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto">
           {/* Logo */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
-            <img
-              src="/logo-icon.png"
-              alt="Aetheris OmniSense"
-              style={{
-                height: '40px',
-                width: 'auto',
-                filter: 'drop-shadow(0 0 10px rgba(0, 245, 155, 0.55))',
-              }}
-            />
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => router.push('/')}>
+            <OmniEyeLogo size={42} glow={true} />
             <div>
               <h1 className="text-lg font-bold leading-tight" style={{ color: '#ECFDF5' }}>
                 Aetheris <span style={{ color: '#00F59B' }}>OmniSense</span>
@@ -65,9 +58,9 @@ export default function AppShell({ children }: AppShellProps) {
               </h1>
               <p
                 className="text-[10px] font-medium uppercase"
-                style={{ color: 'rgba(0, 245, 155, 0.75)', letterSpacing: '0.04em' }}
+                style={{ color: 'rgba(163, 230, 53, 0.85)', letterSpacing: '0.04em' }}
               >
-                Multimodal AI
+                Omniscient Voice &amp; Vision
               </p>
             </div>
           </div>
