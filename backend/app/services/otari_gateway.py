@@ -319,6 +319,7 @@ class OtariGatewayManager:
         return AsyncOpenAI(
             api_key=self.otari_api_key,
             base_url=self.otari_base_url,
+            timeout=12.0 if fast else 20.0,
             max_retries=0 if fast else 1,
             default_headers={
                 "Otari-Key": self.otari_api_key,

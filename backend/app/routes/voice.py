@@ -133,8 +133,20 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         )
 
     except Exception as e:
-        logger.error(f"Transcribe pipeline error: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
+        logger.warning(f"Transcribe pipeline graceful fallback: {type(e).__name__}: {e}")
+        return TranscribeResponse(
+            text="",
+            confidence=0.0,
+            confidence_label="very_low",
+            is_valid=False,
+            needs_clarification=True,
+            cleaned_text="",
+            intent="unknown",
+            detected_language="en",
+            language_name="English",
+            validation_reason="STT unavailable. Please speak clearly or type prompt.",
+            stt_engine="none",
+        )
 
 
 @router.post("/pipeline")

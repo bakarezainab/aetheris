@@ -7,18 +7,62 @@ const MIN_RECORDING_MS = 400;
 export function useVoiceRecorder() {
   const [state, setState] = useState<RecorderState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startTimeRef = useRef<number>(0);
   const streamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const recognitionTextRef = useRef<string>('');
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (languageCode: string = 'en') => {
+    recognitionTextRef.current = '';
+    setLiveTranscript('');
+
+    // 1. Browser Native Web Speech API (Instant client-side STT)
+    const SpeechRecognition =
+      typeof window !== 'undefined'
+        ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        : null;
+
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        // Map common codes to BCP-47
+        const bcpMap: Record<string, string> = {
+          en: 'en-US', hi: 'hi-IN', kn: 'kn-IN', ta: 'ta-IN', te: 'te-IN',
+          es: 'es-ES', fr: 'fr-FR', ja: 'ja-JP',
+        };
+        recognition.lang = bcpMap[languageCode] || 'en-US';
+
+        recognition.onresult = (event: any) => {
+          let accumulated = '';
+          for (let i = 0; i < event.results.length; i++) {
+            accumulated += event.results[i][0].transcript + ' ';
+          }
+          const clean = accumulated.trim();
+          if (clean) {
+            recognitionTextRef.current = clean;
+            setLiveTranscript(clean);
+          }
+        };
+        recognition.onerror = () => {};
+        recognition.start();
+        recognitionRef.current = recognition;
+      } catch (err) {
+        console.warn('SpeechRecognition initialization error:', err);
+      }
+    }
+
+    // 2. Audio Stream & MediaRecorder for visualizer & audio pipeline
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
-        sampleRate: 16000,       // Optimal for speech recognition
+        sampleRate: 16000,
       },
     });
     streamRef.current = stream;
@@ -31,11 +75,18 @@ export function useVoiceRecorder() {
     chunksRef.current = [];
     startTimeRef.current = Date.now();
 
-    mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    mr.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+
     mr.onstop = () => {
       const duration = Date.now() - startTimeRef.current;
-      stream.getTracks().forEach(t => t.stop());
+      stream.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
+
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
 
       if (duration < MIN_RECORDING_MS || chunksRef.current.length === 0) {
         console.warn(`Recording too short (${duration}ms), skipping`);
@@ -45,6 +96,7 @@ export function useVoiceRecorder() {
 
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
       setAudioBlob(blob);
+      setLiveTranscript(recognitionTextRef.current);
       setState('processing');
     };
 
@@ -55,13 +107,26 @@ export function useVoiceRecorder() {
   }, []);
 
   const stop = useCallback(() => {
+    try {
+      recognitionRef.current?.stop();
+    } catch {}
     recorderRef.current?.stop();
   }, []);
 
   const reset = useCallback(() => {
     setAudioBlob(null);
+    setLiveTranscript('');
+    recognitionTextRef.current = '';
     setState('idle');
   }, []);
 
-  return { state, audioBlob, start, stop, reset, stream: streamRef.current };
+  return {
+    state,
+    audioBlob,
+    liveTranscript,
+    start,
+    stop,
+    reset,
+    stream: streamRef.current,
+  };
 }

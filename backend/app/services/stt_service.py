@@ -102,8 +102,8 @@ async def _transcribe_sarvam(
     mime_type: str = "audio/webm",
     language: str | None = None,
 ) -> dict:
-    if not SARVAM_API_KEY:
-        raise RuntimeError("SARVAM_API_KEY not configured")
+    if not SARVAM_API_KEY or "your_" in SARVAM_API_KEY:
+        raise RuntimeError("SARVAM_API_KEY not configured or is placeholder")
 
     clean_mime = mime_type.split(";")[0].strip().lower()
     ext = _ext_from_mime(mime_type)
@@ -149,6 +149,10 @@ async def _transcribe_whisper(
     mime_type: str = "audio/webm",
     language: str | None = None,
 ) -> dict:
+    from app.config import GROQ_API_KEY
+    if not GROQ_API_KEY or "your_" in GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY not configured or is placeholder")
+
     ext = _ext_from_mime(mime_type)
     clean_mime = mime_type.split(";")[0].strip().lower()
 
@@ -158,59 +162,29 @@ async def _transcribe_whisper(
     elif STT_LANGUAGE:
         lang_param = STT_LANGUAGE
 
-    # 1. Groq Whisper (fast)
-    try:
-        audio_file = io.BytesIO(audio_bytes)
-        audio_file.name = f"audio.{ext}"
-        kwargs: dict = {
-            "model": MODELS["stt_groq"],
-            "file": (f"audio.{ext}", audio_file, clean_mime),
-            "response_format": "verbose_json",
-        }
-        if lang_param:
-            kwargs["language"] = lang_param
-
-        result = await groq.audio.transcriptions.create(**kwargs)
-        text = result.text.strip()
-        confidence = _compute_whisper_confidence(result)
-        raw_whisper_lang = getattr(result, "language", None)
-        whisper_iso = _normalise_whisper_lang(raw_whisper_lang)
-        effective_lang = lang_param or whisper_iso
-
-        return {
-            "text": text,
-            "confidence": confidence,
-            "language": effective_lang,
-            "stt_detected_language": whisper_iso,
-            "engine": "groq",
-            "stt_mode": "transcribe",
-        }
-    except Exception as groq_err:
-        logger.warning("Groq Whisper skipped: %s — trying Otari Whisper", groq_err)
-
-    # 2. Otari Whisper
     audio_file = io.BytesIO(audio_bytes)
     audio_file.name = f"audio.{ext}"
-    kwargs = {
-        "model": MODELS["stt_otari"],
+    kwargs: dict = {
+        "model": MODELS.get("stt_groq", "whisper-large-v3-turbo"),
         "file": (f"audio.{ext}", audio_file, clean_mime),
+        "response_format": "verbose_json",
     }
     if lang_param:
         kwargs["language"] = lang_param
 
-    result = await otari.audio.transcriptions.create(**kwargs)
+    result = await groq.audio.transcriptions.create(**kwargs)
     text = result.text.strip()
-    confidence = 0.75 if len(text) > 3 else 0.3
-    raw_otari_lang = getattr(result, "language", None)
-    otari_iso = _normalise_whisper_lang(raw_otari_lang)
-    effective_lang = lang_param or otari_iso
+    confidence = _compute_whisper_confidence(result)
+    raw_whisper_lang = getattr(result, "language", None)
+    whisper_iso = _normalise_whisper_lang(raw_whisper_lang)
+    effective_lang = lang_param or whisper_iso
 
     return {
         "text": text,
         "confidence": confidence,
         "language": effective_lang,
-        "stt_detected_language": otari_iso,
-        "engine": "otari",
+        "stt_detected_language": whisper_iso,
+        "engine": "groq",
         "stt_mode": "transcribe",
     }
 
@@ -222,6 +196,7 @@ async def transcribe(
 ) -> dict:
     """
     Transcribe audio bytes using the configured engine priority.
+    Gracefully falls back to empty result if cloud STT keys are not set.
     """
     last_error = None
     for engine in STT_ENGINE_PRIORITY:
@@ -234,6 +209,14 @@ async def transcribe(
                 return await _transcribe_whisper(audio_bytes, mime_type, language)
         except Exception as err:
             last_error = err
-            logger.warning("STT engine '%s' failed: %s — trying next", engine, err)
+            logger.info("STT engine '%s' skipped/failed: %s", engine, err)
 
-    raise RuntimeError(f"All STT engines failed. Last error: {last_error}")
+    logger.warning("No cloud STT engine succeeded: %s. Returning fallback transcript response.", last_error)
+    return {
+        "text": "",
+        "confidence": 0.0,
+        "language": language or "en",
+        "stt_detected_language": language or "en",
+        "engine": "fallback",
+        "stt_mode": "fallback",
+    }

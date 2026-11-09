@@ -49,7 +49,7 @@ const OTARI_LANGUAGES = [
 
 
 export default function VoiceMode() {
-  const { state: recState, audioBlob, start, stop, reset } = useVoiceRecorder();
+  const { state: recState, audioBlob, liveTranscript, start, stop, reset } = useVoiceRecorder();
   const [phase, setPhase] = useState<Phase>('idle');
   // Pre-loaded greeting bubble — shown immediately when the session starts
   const [messages, setMessages] = useState<Message[]>([
@@ -147,7 +147,7 @@ export default function VoiceMode() {
     if (historyRef.current.length > 10) historyRef.current = historyRef.current.slice(-10);
   };
 
-  // ── Voice flow (existing) ──────────────────────────────────
+  // ── Voice flow ──────────────────────────────────
   useEffect(() => {
     if (!audioBlob) return;
     stopVAD();
@@ -155,27 +155,45 @@ export default function VoiceMode() {
     (async () => {
       try {
         setPhase('transcribing');
-        const result = await transcribeAudio(audioBlob);
+        let userText = (liveTranscript || '').trim();
+        let lang = detectedLanguage || 'en';
+        let langName = detectedLanguageName || 'English';
+        let isCompound = false;
+        let isImageGen = false;
 
-        if (!result.text?.trim() && !result.cleaned_text?.trim()) {
-          setPhase('idle'); reset(); return;
+        if (!userText) {
+          try {
+            const result = await transcribeAudio(audioBlob);
+            userText = (result.cleaned_text || result.text || '').trim();
+            if (result.detected_language) lang = result.detected_language;
+            if (result.language_name) langName = result.language_name;
+            if (result.engine) setSttEngine(result.engine);
+            if (result.intent === 'compound') isCompound = true;
+            if (result.intent === 'image_generation') isImageGen = true;
+          } catch (sttErr) {
+            console.warn('Backend audio transcription notice:', sttErr);
+          }
         }
 
-        const userText = result.cleaned_text || result.text;
+        if (!userText) {
+          toast('Could not detect speech. Please speak closer to your mic or type your prompt.', { icon: '🎙️' });
+          setPhase('idle');
+          reset();
+          return;
+        }
+
         addMsg('user', userText);
 
-        // ── Capture detected language & STT engine for this turn ─────────────
-        const lang = result.detected_language || 'en';
-        const langName = result.language_name || 'English';
         setDetectedLanguage(lang);
         setDetectedLanguageName(langName);
-        if (result.engine) setSttEngine(result.engine);
         if (lang !== 'en') {
-          toast(`🌐 ${langName} detected`, { duration: 2000, style: { background: 'rgba(126,34,206,0.85)', color: '#fff', fontSize: '13px' } });
+          toast(`🌐 ${langName} detected`, { duration: 2000, style: { background: 'rgba(5, 150, 105, 0.9)', color: '#fff', fontSize: '13px' } });
         }
 
+        if (isCompoundPrompt(userText)) isCompound = true;
+
         // ── Check if this is a COMPOUND request (image + explained text) ──
-        if (result.intent === 'compound') {
+        if (isCompound) {
           setPhase('generating_image');
           try {
             const compoundResult = await generateCompound(userText);
@@ -411,7 +429,7 @@ export default function VoiceMode() {
     }
     if (phase !== 'idle') return;
     setPhase('recording');
-    const stream = await start();
+    const stream = await start(detectedLanguage);
     if (stream) startVAD(stream);
   };
 

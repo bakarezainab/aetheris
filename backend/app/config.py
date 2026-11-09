@@ -23,9 +23,9 @@ STT_ENGINE_PRIORITY = ["sarvam", "groq", "otari"]
 # ── Open-Weight Models via Otari.ai (Distinct Roles for Rubric 30/30 pts) ────
 OPEN_WEIGHT_MODELS = {
     "reasoning": {
-        "id": "alibaba/qwen-3.5-35b-a3b",
-        "otari_id": "alibaba/qwen-3.5-35b-a3b",
-        "name": "Alibaba Qwen 3.5 35B-A3B",
+        "id": "alibaba/qwen3-32b",
+        "otari_id": "alibaba/qwen3-32b",
+        "name": "Alibaba Qwen 3 32B Instruct",
         "license": "Apache-2.0 (Open-Weight)",
         "role": "Primary Reasoning, Fact Verification & Structured Synthesis",
         "cost_per_1k_tokens": 0.0004,
