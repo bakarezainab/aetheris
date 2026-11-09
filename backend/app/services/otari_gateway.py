@@ -572,7 +572,10 @@ class OtariGatewayManager:
                         temperature=temperature,
                         extra_headers={"X-Otari-User-Id": user_id},
                     )
-                    text = (resp.choices[0].message.content or "").strip()
+                    msg = resp.choices[0].message
+                    text = (msg.content or "").strip()
+                    if not text and getattr(msg, "reasoning_content", None):
+                        text = (msg.reasoning_content or "").strip()
                     if text:
                         response_text = text
                         used_role = candidate_role

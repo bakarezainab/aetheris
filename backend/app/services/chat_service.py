@@ -622,27 +622,36 @@ async def chat_stream(
         otari_gateway._mark_feature("multiple_models_roles")
 
         live_otari = otari_gateway.get_otari_client(fast=True)
-        otari_model_id = (
-            "alibaba/qwen3-32b" if mode == "voice" else "alibaba/qwen-3.5-35b-a3b"
-        )
+        otari_model_id = "alibaba/qwen3-30b-a3b-instruct-2507"
         used_fallback = False
         used_model_label = f"{otari_model_id} (via Otari Gateway)"
 
         stream = None
-        if live_otari is not None and target_model in (MODELS["chat"], MODELS["chat_voice"]):
-            try:
-                stream = await live_otari.chat.completions.create(
-                    model=otari_model_id,
-                    messages=messages,
-                    max_tokens=max_tokens,
-                    temperature=temp,
-                    top_p=top_p,
-                    stream=True,
-                )
-            except Exception as otari_err:
-                logger.warning(f"Otari primary ({otari_model_id}) returned {otari_err}; failing over to secondary node ({target_model})")
-                used_fallback = True
-                used_model_label = f"{target_model} (Otari Failover Chain)"
+        candidate_models = [
+            otari_model_id,
+            "alibaba/qwen3-32b",
+            "alibaba/qwen3-30b-a3b",
+            "alibaba/qwen-3.5-35b-a3b",
+        ]
+
+        if live_otari is not None:
+            for cand_model in candidate_models:
+                try:
+                    stream = await live_otari.chat.completions.create(
+                        model=cand_model,
+                        messages=messages,
+                        max_tokens=max_tokens,
+                        temperature=temp,
+                        top_p=top_p,
+                        stream=True,
+                    )
+                    used_model_label = f"{cand_model} (via Otari Gateway)"
+                    if cand_model != otari_model_id:
+                        used_fallback = True
+                    break
+                except Exception as otari_err:
+                    logger.warning(f"Otari model {cand_model} returned {otari_err}; trying next fallback")
+                    used_fallback = True
 
         if stream is None:
             stream = await client.chat.completions.create(
@@ -655,11 +664,24 @@ async def chat_stream(
             )
 
         emitted_chars = 0
+        buffered_reasoning = []
         async for chunk in stream:
-            delta = chunk.choices[0].delta.content
-            if delta:
-                emitted_chars += len(delta)
-                yield delta
+            if not getattr(chunk, "choices", None):
+                continue
+            delta = chunk.choices[0].delta
+            token = getattr(delta, "content", None)
+            reasoning = getattr(delta, "reasoning_content", None)
+            if token:
+                emitted_chars += len(token)
+                yield token
+            elif reasoning:
+                buffered_reasoning.append(reasoning)
+
+        if emitted_chars == 0 and buffered_reasoning:
+            fallback_text = "".join(buffered_reasoning).strip()
+            if fallback_text:
+                yield fallback_text
+                emitted_chars = len(fallback_text)
 
         _lat = (_time.perf_counter() - _t0) * 1000.0
         _tok = max(80, int((len(final_input) + emitted_chars) / 4))

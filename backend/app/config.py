@@ -31,9 +31,9 @@ OPEN_WEIGHT_MODELS = {
         "cost_per_1k_tokens": 0.0004,
     },
     "voice_chat": {
-        "id": "alibaba/qwen3-32b",
-        "otari_id": "alibaba/qwen3-32b",
-        "name": "Alibaba Qwen 3 32B",
+        "id": "alibaba/qwen3-30b-a3b-instruct-2507",
+        "otari_id": "alibaba/qwen3-30b-a3b-instruct-2507",
+        "name": "Alibaba Qwen 3 30B-A3B Instruct",
         "license": "Apache-2.0 (Open-Weight)",
         "role": "Low-Latency Multilingual Voice & Text Chat + Native Indic Script Output",
         "cost_per_1k_tokens": 0.0003,
@@ -70,16 +70,17 @@ OTARI_DEFAULT_USER_BUDGET_USD = float(os.getenv("OTARI_DEFAULT_USER_BUDGET_USD",
 
 # ── Model IDs (Strictly Mozilla.ai Otari Open-Weight Models) ─────────────────
 MODELS = {
-    # Primary Reasoning & Structured LLM on Otari
-    "chat":            "alibaba/qwen-3.5-35b-a3b",
+    # Fast Multilingual Conversational LLM on Otari
+    "chat":            "alibaba/qwen3-30b-a3b-instruct-2507",
     # Open-Weight Fallback chain on Otari
     "chat_fallback":   [
         "alibaba/qwen3-32b",
+        "alibaba/qwen-3.5-35b-a3b",
         "alibaba/qwen3-coder-30b-a3b-instruct",
         "alibaba/qwen3guard-gen-8b",
     ],
     # Fast Multilingual Voice LLM on Otari
-    "chat_voice":      "alibaba/qwen3-32b",
+    "chat_voice":      "alibaba/qwen3-30b-a3b-instruct-2507",
     # Vision VLM on Otari
     "vision":          "alibaba/qwen3-vl-30b-a3b-instruct",
     "vision_fallback": [
