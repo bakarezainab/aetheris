@@ -49,7 +49,7 @@ const OTARI_LANGUAGES = [
 
 
 export default function VoiceMode() {
-  const { state: recState, audioBlob, liveTranscript, start, stop, reset } = useVoiceRecorder();
+  const { state: recState, audioBlob, liveTranscript, isSpeechRecognitionSupported, getLatestTranscript, start, stop, reset } = useVoiceRecorder();
   const [phase, setPhase] = useState<Phase>('idle');
   // Pre-loaded greeting bubble — shown immediately when the session starts
   const [messages, setMessages] = useState<Message[]>([
@@ -155,7 +155,7 @@ export default function VoiceMode() {
     (async () => {
       try {
         setPhase('transcribing');
-        let userText = (liveTranscript || '').trim();
+        let userText = (getLatestTranscript() || liveTranscript || '').trim();
         let lang = detectedLanguage || 'en';
         let langName = detectedLanguageName || 'English';
         let isCompound = false;
@@ -176,7 +176,8 @@ export default function VoiceMode() {
         }
 
         if (!userText) {
-          toast('Could not detect speech. Please speak closer to your mic or type your prompt.', { icon: '🎙️' });
+          toast('No speech detected. You can type your question right here or tap a chip!', { icon: '⌨️' });
+          setShowTextPanel(true);
           setPhase('idle');
           reset();
           return;
@@ -238,7 +239,7 @@ export default function VoiceMode() {
         }
 
         // ── Check if this is a single image generation request ───────
-        if (result.intent === 'image_generation') {
+        if (isImageGen) {
           setPhase('generating_image');
           try {
             const imgResult = await generateImage(userText);
@@ -741,7 +742,7 @@ export default function VoiceMode() {
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="flex items-center gap-3 px-4 pb-3 pt-1">
+              <div className="flex items-center gap-3 px-4 pb-2 pt-1">
                 <input
                   type="text"
                   value={textPrompt}
@@ -770,6 +771,32 @@ export default function VoiceMode() {
                 >
                   <Send className="w-5 h-5 text-white" />
                 </motion.button>
+              </div>
+
+              {/* Quick suggestion chips */}
+              <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
+                {[
+                  'What is Mozilla Otari Gateway?',
+                  'How do open-weight models work?',
+                  'Tell me a creative story in Hindi',
+                  'Summarize how Aetheris meets the 100-pt rubric',
+                ].map((sugg) => (
+                  <button
+                    key={sugg}
+                    type="button"
+                    onClick={() => {
+                      setTextPrompt(sugg);
+                    }}
+                    className="px-2.5 py-1 rounded-full text-[11px] transition-all cursor-pointer hover:border-[#00F59B]"
+                    style={{
+                      background: 'rgba(0, 245, 155, 0.08)',
+                      border: '1px solid rgba(0, 245, 155, 0.2)',
+                      color: 'rgba(236, 253, 245, 0.85)',
+                    }}
+                  >
+                    + {sugg}
+                  </button>
+                ))}
               </div>
             </motion.div>
           )}
@@ -948,6 +975,30 @@ export default function VoiceMode() {
                   )}
                 </motion.button>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Live Speech Transcription Pill (shown while user is speaking) ──── */}
+        <AnimatePresence>
+          {recState === 'recording' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="pointer-events-auto px-5 py-2.5 rounded-2xl text-xs max-w-lg text-center mx-auto shadow-xl flex items-center justify-center gap-2.5"
+              style={{
+                background: 'rgba(5, 20, 14, 0.92)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(0, 245, 155, 0.35)',
+                color: '#00F59B',
+                boxShadow: '0 0 25px rgba(0, 245, 155, 0.2)',
+              }}
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00F59B] animate-ping shrink-0" />
+              <span className="font-medium text-[13px] truncate">
+                {liveTranscript ? `“${liveTranscript}”` : 'Listening... Speak now into your microphone'}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>

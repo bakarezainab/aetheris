@@ -69,23 +69,34 @@ export async function* streamChat(
  *   Multilingual → gTTS / Mozilla.ai Otari Kokoro 82M
  */
 export async function speakText(text: string, language: string = 'en'): Promise<void> {
-  const res = await fetch(`${API}/api/voice/speak`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, language }),
-  });
+  try {
+    const res = await fetch(`${API}/api/voice/speak`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language }),
+    });
 
-  if (!res.ok) throw new Error('TTS failed');
+    if (!res.ok) {
+      console.warn('Backend TTS returned non-200, continuing gracefully');
+      return;
+    }
 
-  const audioBlob = await res.blob();
-  const url = URL.createObjectURL(audioBlob);
-  const audio = new Audio(url);
+    const audioBlob = await res.blob();
+    const url = URL.createObjectURL(audioBlob);
+    const audio = new Audio(url);
 
-  return new Promise((resolve, reject) => {
-    audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
-    audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Audio playback failed')); };
-    audio.play().catch(reject);
-  });
+    return new Promise((resolve) => {
+      audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      audio.play().catch((err) => {
+        console.warn('Audio playback not permitted or interrupted:', err);
+        URL.revokeObjectURL(url);
+        resolve();
+      });
+    });
+  } catch (err) {
+    console.warn('speakText error:', err);
+  }
 }
 
 /**

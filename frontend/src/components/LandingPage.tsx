@@ -81,7 +81,7 @@ const LandingPage: FC = () => {
       const sections = Array.from(navLinks).map((link) =>
         document.querySelector(link.getAttribute('href') || '')
       );
-      let currentActive = null;
+      let currentActive: string | null = null;
       const scrollY = window.scrollY;
 
       sections.forEach((section) => {

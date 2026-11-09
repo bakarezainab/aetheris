@@ -2,18 +2,24 @@ import { useState, useRef, useCallback } from 'react';
 
 export type RecorderState = 'idle' | 'recording' | 'processing';
 
-const MIN_RECORDING_MS = 400;
+const MIN_RECORDING_MS = 350;
 
 export function useVoiceRecorder() {
   const [state, setState] = useState<RecorderState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [liveTranscript, setLiveTranscript] = useState<string>('');
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState<boolean>(true);
+  
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startTimeRef = useRef<number>(0);
   const streamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
   const recognitionTextRef = useRef<string>('');
+
+  const getLatestTranscript = useCallback(() => {
+    return (recognitionTextRef.current || '').trim();
+  }, []);
 
   const start = useCallback(async (languageCode: string = 'en') => {
     recognitionTextRef.current = '';
@@ -48,12 +54,20 @@ export function useVoiceRecorder() {
             setLiveTranscript(clean);
           }
         };
-        recognition.onerror = () => {};
+
+        recognition.onerror = (e: any) => {
+          console.warn('[WebSpeech] Recognition notice:', e.error || e);
+        };
+
         recognition.start();
         recognitionRef.current = recognition;
+        setIsSpeechRecognitionSupported(true);
       } catch (err) {
         console.warn('SpeechRecognition initialization error:', err);
+        setIsSpeechRecognitionSupported(false);
       }
+    } else {
+      setIsSpeechRecognitionSupported(false);
     }
 
     // 2. Audio Stream & MediaRecorder for visualizer & audio pipeline
@@ -81,22 +95,27 @@ export function useVoiceRecorder() {
 
     mr.onstop = () => {
       const duration = Date.now() - startTimeRef.current;
-      stream.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+      const finalTranscript = (recognitionTextRef.current || '').trim();
+
+      // Graceful release of audio tracks
+      setTimeout(() => {
+        stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }, 300);
 
       try {
         recognitionRef.current?.stop();
       } catch {}
 
-      if (duration < MIN_RECORDING_MS || chunksRef.current.length === 0) {
-        console.warn(`Recording too short (${duration}ms), skipping`);
+      if (duration < MIN_RECORDING_MS || (chunksRef.current.length === 0 && !finalTranscript)) {
+        console.warn(`Recording too short (${duration}ms) with no speech, skipping`);
         setState('idle');
         return;
       }
 
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
       setAudioBlob(blob);
-      setLiveTranscript(recognitionTextRef.current);
+      setLiveTranscript(finalTranscript);
       setState('processing');
     };
 
@@ -107,10 +126,16 @@ export function useVoiceRecorder() {
   }, []);
 
   const stop = useCallback(() => {
-    try {
-      recognitionRef.current?.stop();
-    } catch {}
-    recorderRef.current?.stop();
+    // Delay recognition stop slightly so final speech frames are processed
+    setTimeout(() => {
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+    }, 250);
+
+    if (recorderRef.current && recorderRef.current.state === 'recording') {
+      recorderRef.current.stop();
+    }
   }, []);
 
   const reset = useCallback(() => {
@@ -124,6 +149,8 @@ export function useVoiceRecorder() {
     state,
     audioBlob,
     liveTranscript,
+    isSpeechRecognitionSupported,
+    getLatestTranscript,
     start,
     stop,
     reset,
